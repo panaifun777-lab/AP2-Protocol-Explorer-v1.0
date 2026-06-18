@@ -1,0 +1,252 @@
+// AP2 (Avatar Payments Protocol) v1.0 - Prisma Schema
+// Mirrors the RFC v1.0 Solidity contracts as persistent simulation state
+// All token amounts use BigInt (6-decimals USDC-style) to avoid Int32 overflow
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Avatar Registry (PoUE - Proof of Unique Entity)
+// ============================================================
+model Avatar {
+  id              String   @id @default(cuid())
+  address         String   @unique // 0x... simulated wallet address
+  name            String
+  kind            String   @default("avatar") // avatar | agent | prophet | genius
+  cognitiveRoot   String?  // Merkle root of cognitive fingerprint
+  reputation      Int      @default(0) // cognitive reputation score
+  isUniqueEntity  Boolean  @default(false) // PoUE verified
+  poueProofHash   String?  // ZK proof hash for PoUE
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  escrowsAsPayer    Escrow[]       @relation("EscrowPayer")
+  escrowsAsPayee    Escrow[]       @relation("EscrowPayee")
+  cognitiveAssets   CognitiveAsset[]
+  consciousnessRecs ConsciousnessRecord[] @relation("ConsciousnessCreator")
+  cdsTokens         CDSToken[]
+  dagNodes          DAGNode[]      @relation("DAGNodeOwner")
+  physicsIntents    PhysicsIntent[] @relation("PhysicsIntentCreator")
+  physicsExecutions PhysicsIntent[] @relation("PhysicsIntentExecutor")
+  budgetFences      BudgetFence[]
+  eceSnapshots      ECESnapshot[]
+}
+
+// ============================================================
+// BudgetFence - Scope Lock + Daily Cap + Decaying Auth
+// ============================================================
+model BudgetFence {
+  id              String   @id @default(cuid())
+  avatarId        String
+  avatar          Avatar   @relation(fields: [avatarId], references: [id])
+  dailyCap        BigInt   @default(1000000000) // 1000 USDC in 6-decimals
+  dailySpent      BigInt   @default(0)
+  allowedScopes   String   @default("legal,compliance,research") // comma-separated
+  decayingThreshold BigInt @default(10000000) // triggers human auth
+  authDecayFactor Float    @default(1.0) // 1.0 = full autonomy, decays over time
+  lastResetAt     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([avatarId])
+}
+
+// ============================================================
+// AP2Escrow - Streaming Payment + MCP Settlement
+// ============================================================
+model Escrow {
+  id              String   @id @default(cuid())
+  taskId          String   @unique // bytes32 task id
+  payerId         String
+  payer           Avatar   @relation("EscrowPayer", fields: [payerId], references: [id])
+  payeeId         String
+  payee           Avatar   @relation("EscrowPayee", fields: [payeeId], references: [id])
+  totalAmount     BigInt   // 6-decimals USDC
+  releasedAmount  BigInt   @default(0)
+  scope           String
+  startTime       DateTime @default(now())
+  endTime         DateTime
+  status          String   @default("Streaming") // Created | Streaming | Completed | Disputed | Refunded
+  qualityScore    Int      @default(0) // 0-100, set on settlement
+  completionPct   Int      @default(0) // 0-100 from MCP
+  mcpProofHash    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([payerId])
+  @@index([payeeId])
+  @@index([status])
+}
+
+// ============================================================
+// TDPO - CognitiveTimeLock (Time-Delayed Pricing Oracle)
+// ============================================================
+model CognitiveAsset {
+  id                    String   @id @default(cuid())
+  cognitiveHash         String   @unique // bytes32
+  creatorAvatarId       String
+  creatorAvatar         Avatar   @relation(fields: [creatorAvatarId], references: [id])
+  initialVariance       Int      // 0-1000
+  initialMean           Int      // 0-100
+  lockTimestamp         DateTime @default(now())
+  unlockTimestamp       DateTime
+  isRetroactiveTriggered Boolean @default(false)
+  rewardAmount          BigInt   @default(0)
+  futureMean            Int      @default(0)
+  futureCitations       Int      @default(0)
+  evolutionFactor       Int      @default(0) // futureMean / (initialMean+1)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([creatorAvatarId])
+}
+
+// Mediocrity Tax Pool (global, single row logically)
+model MediocrityPool {
+  id              String   @id @default(cuid())
+  totalCollected  BigInt   @default(0) // 6-decimals
+  totalDistributed BigInt  @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ============================================================
+// CIP - Consciousness Inheritance Protocol
+// ============================================================
+model ConsciousnessRecord {
+  id                  String   @id @default(cuid())
+  entityId            String   @unique // bytes32
+  cognitiveRoot       String   // initial cognitive fingerprint Merkle root
+  creationTimestamp   DateTime @default(now())
+  isDeceasedOrMigrated Boolean @default(false)
+  currentActiveAddressId String?
+  currentActiveAddress Avatar? @relation("ConsciousnessCreator", fields: [currentActiveAddressId], references: [id])
+  migrationCount      Int      @default(0)
+  lastMatchScore      Int      @default(0) // 0-10000 (basis points)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([entityId])
+}
+
+// ============================================================
+// CDS - Cross-Dimensional Soulbound Token
+// ============================================================
+model CDSToken {
+  id              String   @id @default(cuid())
+  tokenId         Int      @unique
+  entityId        String   // bound to cognitive entity, not address
+  ownerAvatarId   String
+  ownerAvatar     Avatar   @relation(fields: [ownerAvatarId], references: [id])
+  metadataHash    String   // cognitive hash stored in SBT
+  isSoulbound     Boolean  @default(true)
+  mintTimestamp   DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([ownerAvatarId])
+  @@index([entityId])
+}
+
+// ============================================================
+// Cognitive DAG - Lineage Tracking + CPDF
+// ============================================================
+model DAGNode {
+  id              String   @id @default(cuid())
+  entityId        String   // cognitive entity id
+  ownerAvatarId   String
+  ownerAvatar     Avatar   @relation("DAGNodeOwner", fields: [ownerAvatarId], references: [id])
+  shardHash       String   // cognitive shard hash
+  isCoreAnchor    Boolean  @default(false) // true if genesis/anchor node
+  eceQualityScore Int      @default(0) // 0-10000 (Q_ece)
+  similarityToAnchor Float @default(0.0) // 0.0-1.0
+  edgeWeight      Float    @default(0.0) // computed via CPDF
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  edgesFrom       DAGEdge[] @relation("DAGEdgeFromNode")
+  edgesTo         DAGEdge[] @relation("DAGEdgeToNode")
+
+  @@index([entityId])
+  @@index([ownerAvatarId])
+}
+
+model DAGEdge {
+  id              String   @id @default(cuid())
+  entityId        String
+  fromNodeId      String
+  fromNode        DAGNode  @relation("DAGEdgeFromNode", fields: [fromNodeId], references: [id])
+  toNodeId        String
+  toNode          DAGNode  @relation("DAGEdgeToNode", fields: [toNodeId], references: [id])
+  weight          Float    @default(0.0) // CPDF-computed weight
+  eceScore        Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([entityId])
+  @@index([fromNodeId])
+  @@index([toNodeId])
+}
+
+// ============================================================
+// PCMG - Phygital Cross-Membrane Gateway
+// ============================================================
+model PhysicsIntent {
+  id                String   @id @default(cuid())
+  intentHash        String   @unique
+  creatorAvatarId   String
+  creatorAvatar     Avatar   @relation("PhysicsIntentCreator", fields: [creatorAvatarId], references: [id])
+  afcEscrowAmount   BigInt   // 6-decimals
+  physicsConstraints String  // JSON string of constraints
+  executorId        String?
+  executor          Avatar?  @relation("PhysicsIntentExecutor", fields: [executorId], references: [id])
+  executionDeadline DateTime
+  status            String   @default("Pending") // Pending | Executing | Verifying | Completed | Slashed
+  fidelityScore     Int      @default(0) // 0-10000
+  resonanceScore    Int      @default(0) // 0-10000
+  multiModalProofHash String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([creatorAvatarId])
+  @@index([status])
+}
+
+// ============================================================
+// ECE - Emotion Consensus Engine snapshots
+// ============================================================
+model ECESnapshot {
+  id              String   @id @default(cuid())
+  avatarId        String
+  avatar          Avatar   @relation(fields: [avatarId], references: [id])
+  cognitiveHash   String?
+  meanScore       Int      @default(0) // 0-1000
+  varianceScore   Int      @default(0) // 0-1000
+  citations       Int      @default(0)
+  recordedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([avatarId])
+  @@index([cognitiveHash])
+}
+
+// ============================================================
+// Test Vectors (from RFC Section 三)
+// ============================================================
+model TestRun {
+  id              String   @id @default(cuid())
+  vectorId        String   // e.g. "Scope_Lock_Violation"
+  module          String   // escrow | tdpo | cip | cds | dag | pcmg
+  input           String   // JSON
+  expectedResult  String
+  actualResult    String?
+  passed          Boolean  @default(false)
+  errorMessage    String?
+  executedAt      DateTime?
+  createdAt       DateTime @default(now())
+}
