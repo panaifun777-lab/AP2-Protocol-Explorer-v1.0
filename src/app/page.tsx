@@ -83,7 +83,12 @@ export default function Home() {
   const ActivePanel = PANELS[active];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background bg-grid bg-grid-fade">
+    <div className="relative min-h-screen flex flex-col bg-background">
+      {/* Grid background layer — faded so it doesn't dominate, but does NOT mask content */}
+      <div
+        className="pointer-events-none fixed inset-0 bg-grid bg-grid-fade -z-10"
+        aria-hidden="true"
+      />
       {/* ============ HEADER ============ */}
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto max-w-[1400px] px-4 md:px-6">
