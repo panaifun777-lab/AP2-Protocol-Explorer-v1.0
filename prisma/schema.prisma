@@ -3,7 +3,8 @@
 // All token amounts use BigInt (6-decimals USDC-style) to avoid Int32 overflow
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
