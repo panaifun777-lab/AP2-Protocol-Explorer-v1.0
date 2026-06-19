@@ -527,3 +527,25 @@ Stage Summary:
 - Module Map section renders with 7 module cards.
 - Contrast improved so cards are clearly visible against background.
 - GitHub synced, Vercel production redeployed.
+
+---
+Task ID: fix-fade
+Agent: main (orchestrator)
+Task: Fix content gradually disappearing when scrolling
+
+Work Log:
+- Diagnosed ROOT CAUSE: bg-grid-fade class (mask-image: radial-gradient fading to transparent at bottom) was applied to the ROOT container div which contains ALL page content. This caused every element below 60% page height to fade out when scrolled into view.
+- FIX: Separated the grid background into its own fixed-position layer with -z-10 and pointer-events-none, so the fade mask only affects the decorative grid pattern — not the actual content.
+- Verified locally: Module Map section now fully visible (opacity:1), footer visible.
+- Deployed to Vercel production (commit e807fc9). Verified:
+  - Root div classes: 'relative min-h-screen flex flex-col bg-background' (grid removed from root)
+  - Fixed grid background layer present (hasFixedGrid: true)
+  - Module Map card opacity: 1 (no fade)
+  - VLM confirms Module Map section fully visible with module cards
+  - VLM confirms footer visible with "AP2 v1.0 · RFC 001 · Avatar 支付协议"
+
+Stage Summary:
+- ISSUE RESOLVED. Content no longer disappears when scrolling.
+- The bg-grid-fade mask now only applies to the decorative grid background, not the page content.
+- All 8 panels, Module Map, and footer are fully visible on both local and production.
+- GitHub synced (commit e807fc9), Vercel production redeployed.
