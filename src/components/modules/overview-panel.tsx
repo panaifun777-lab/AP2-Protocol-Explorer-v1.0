@@ -80,7 +80,7 @@ export function OverviewPanel() {
       />
 
       {/* Hero stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <Stat label={t("overview.protocol")} value="AP2 v1.0" hint="RFC 001 PROPOSED" accent="emerald" />
         <Stat label={t("overview.modules")} value="7" hint={lang === "zh" ? "核心合约" : "core contracts"} accent="cyan" />
         <Stat label={t("overview.consensus")} value="PoUE+PoRC" hint="AFC Chain" accent="violet" />
@@ -88,11 +88,11 @@ export function OverviewPanel() {
       </div>
 
       {/* Three constitutional pillars */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         {pillars.map((p) => {
           const Icon = p.icon;
           return (
-            <Card key={p.title} className="border-glow border-border/60 overflow-hidden">
+            <Card key={p.title} className="glow-border border-border/60 overflow-hidden">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <div
@@ -120,7 +120,7 @@ export function OverviewPanel() {
 
       {/* 4-layer architecture */}
       <PanelCard title={t("overview.stackTitle")} icon={Network}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {stack.map((s, i) => (
             <div
               key={s.name}
@@ -153,7 +153,7 @@ export function OverviewPanel() {
       </PanelCard>
 
       {/* Module map */}
-      <div className="mt-6">
+      <div className="mt-4">
         <PanelCard title={t("overview.moduleMap")} icon={Crosshair}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {MODULES.filter((m) => m.id !== "overview").map((m) => {

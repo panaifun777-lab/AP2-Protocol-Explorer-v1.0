@@ -130,71 +130,70 @@
 }
 
 /* ============================================================
-   Custom scrollbar (cyberpunk)
+   Custom scrollbar (cyberpunk) — plain CSS (not @layer utilities)
+   so Tailwind 4's tree-shaker doesn't strip these classes.
    ============================================================ */
-@layer utilities {
-  .scrollbar-cyber {
-    scrollbar-width: thin;
-    scrollbar-color: var(--primary) transparent;
-  }
-  .scrollbar-cyber::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  .scrollbar-cyber::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .scrollbar-cyber::-webkit-scrollbar-thumb {
-    background: color-mix(in oklch, var(--primary) 50%, transparent);
-    border-radius: 9999px;
-  }
-  .scrollbar-cyber::-webkit-scrollbar-thumb:hover {
-    background: var(--primary);
-  }
+.scrollbar-cyber {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
+}
+.scrollbar-cyber::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-cyber::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-cyber::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--primary) 50%, transparent);
+  border-radius: 9999px;
+}
+.scrollbar-cyber::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
 
-  /* Glow effects */
-  .glow-primary {
-    box-shadow: 0 0 20px -4px color-mix(in oklch, var(--primary) 60%, transparent);
-  }
-  .glow-text-primary {
-    text-shadow: 0 0 12px color-mix(in oklch, var(--primary) 50%, transparent);
-  }
+/* Glow effects */
+.glow-primary {
+  box-shadow: 0 0 20px -4px color-mix(in oklch, var(--primary) 60%, transparent);
+}
+.glow-text-primary {
+  text-shadow: 0 0 12px color-mix(in oklch, var(--primary) 50%, transparent);
+}
 
-  /* Grid background pattern */
-  .bg-grid {
-    background-image:
-      linear-gradient(to right, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px);
-    background-size: 32px 32px;
-  }
+/* Grid background pattern */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
 
-  .bg-grid-fade {
-    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 60%, transparent 100%);
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 60%, transparent 100%);
-  }
+.bg-grid-fade {
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 60%, transparent 100%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 60%, transparent 100%);
+}
 
-  /* Animated gradient border */
-  .border-glow {
-    position: relative;
-  }
-  .border-glow::before {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, var(--chart-1), var(--chart-2), var(--chart-3));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0.5;
-    pointer-events: none;
-  }
+/* Animated gradient border */
+.glow-border {
+  position: relative;
+}
+.glow-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--chart-1), var(--chart-2), var(--chart-3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.5;
+  pointer-events: none;
+}
 
-  .animate-pulse-glow {
-    animation: pulse-glow 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
+.animate-pulse-glow {
+  animation: pulse-glow 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @keyframes pulse-glow {
@@ -210,4 +209,49 @@
 .mermaid-container svg {
   max-width: 100%;
   height: auto;
+}
+
+/* ============================================================
+   Static color utility safelist — Tailwind 4 can't detect classes
+   built via template literals like `bg-${accent}-500/10`, so we
+   declare the full set here to guarantee they ship in the build.
+   ============================================================ */
+.bg-emerald-500\/10,
+.bg-amber-500\/10,
+.bg-violet-500\/10,
+.bg-cyan-500\/10,
+.bg-rose-500\/10,
+.bg-emerald-500\/15,
+.bg-amber-500\/15,
+.bg-violet-500\/15,
+.bg-cyan-500\/15,
+.bg-rose-500\/15,
+.bg-emerald-500\/20,
+.bg-amber-500\/20,
+.bg-violet-500\/20,
+.bg-cyan-500\/20,
+.bg-rose-500\/20,
+.border-emerald-500\/30,
+.border-amber-500\/30,
+.border-violet-500\/30,
+.border-cyan-500\/30,
+.border-rose-500\/30,
+.text-emerald-600,
+.text-amber-600,
+.text-violet-600,
+.text-cyan-600,
+.text-rose-600,
+.dark .text-emerald-400,
+.dark .text-amber-400,
+.dark .text-violet-400,
+.dark .text-cyan-400,
+.dark .text-rose-400,
+.bg-emerald-500,
+.bg-amber-500,
+.bg-violet-500,
+.bg-cyan-500,
+.bg-rose-500 {
+  /* Properties are provided by Tailwind's generated utilities; this block
+     only exists to force the class names into the build output. */
+  -z-index: 0;
 }
