@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useT, useLang } from "@/lib/i18n";
+import { LanguageToggle } from "@/components/language-toggle";
 
 // Module panels (lazy)
 import { OverviewPanel } from "@/components/modules/overview-panel";
@@ -31,6 +33,8 @@ const PANELS: Record<ModuleId, React.ComponentType> = {
 };
 
 export default function Home() {
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   const [active, setActive] = React.useState<ModuleId>("overview");
   const [bootstrapped, setBootstrapped] = React.useState(false);
   const [counts, setCounts] = React.useState<Record<string, number> | null>(
@@ -48,19 +52,19 @@ export default function Home() {
         setBootstrapped(true);
       } else {
         toast({
-          title: "Seed failed",
+          title: lang === "zh" ? "种子数据失败" : "Seed failed",
           description: json.error,
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [toast, lang]);
 
   React.useEffect(() => {
     void bootstrap();
@@ -90,40 +94,45 @@ export default function Home() {
               </div>
               <div className="flex flex-col">
                 <h1 className="font-mono text-sm font-bold tracking-tight leading-none">
-                  AP2 Protocol Explorer
+                  {t("header.title")}
                 </h1>
                 <span className="text-[10px] text-muted-foreground font-mono leading-none mt-1">
-                  Avatar Payments Protocol v1.0 · RFC 001
+                  {t("header.subtitle")}
                 </span>
               </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="font-mono text-[10px] gap-1 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
-              >
-                <Activity className="h-3 w-3" />
-                {bootstrapped ? "SIM ACTIVE" : "BOOTING…"}
-              </Badge>
-              {counts && (
+            <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2">
                 <Badge
                   variant="outline"
-                  className="font-mono text-[10px] gap-1"
+                  className="font-mono text-[10px] gap-1 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
                 >
-                  <Sparkles className="h-3 w-3" />
-                  {counts.avatars} avatars · {counts.escrows} escrows
+                  <Activity className="h-3 w-3" />
+                  {bootstrapped ? t("header.simActive") : t("header.booting")}
                 </Badge>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="font-mono text-xs gap-1"
-                onClick={refreshCounts}
-              >
-                <Terminal className="h-3.5 w-3.5" />
-                Refresh
-              </Button>
+                {counts && (
+                  <Badge
+                    variant="outline"
+                    className="font-mono text-[10px] gap-1"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {counts.avatars} {t("header.avatars")} · {counts.escrows}{" "}
+                    {t("header.escrows")}
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="font-mono text-xs gap-1"
+                  onClick={refreshCounts}
+                >
+                  <Terminal className="h-3.5 w-3.5" />
+                  {t("header.refresh")}
+                </Button>
+              </div>
+              {/* Language toggle — top right */}
+              <LanguageToggle />
             </div>
           </div>
         </div>
@@ -149,8 +158,7 @@ export default function Home() {
                   title={m.description}
                 >
                   <Icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{m.shortLabel}</span>
-                  <span className="sm:hidden">{m.shortLabel}</span>
+                  <span>{t(m.navKey as never)}</span>
                   {isActive && (
                     <motion.span
                       layoutId="active-tab"
@@ -173,7 +181,7 @@ export default function Home() {
       <main className="flex-1 mx-auto max-w-[1400px] w-full px-4 md:px-6 py-6 md:py-8">
         <AnimatePresence mode="wait">
           <motion.div
-            key={active}
+            key={active + lang}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -189,27 +197,18 @@ export default function Home() {
         <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-muted-foreground font-mono">
             <div className="flex items-center gap-2">
-              <span className="text-emerald-600 dark:text-emerald-400">
-                ●
-              </span>
-              <span>
-                AP2 v1.0 · RFC 001 ·{" "}
-                <span className="text-foreground/70">
-                  Avatar Payments Protocol
-                </span>
-              </span>
+              <span className="text-emerald-600 dark:text-emerald-400">●</span>
+              <span>{t("footer.status")}</span>
             </div>
             <div className="flex items-center gap-4">
-              <span className="hidden md:inline">
-                Web4.0 · AFC Chain · PoUE + PoRC
-              </span>
+              <span className="hidden md:inline">{t("footer.chain")}</span>
               <a
                 href="#"
                 className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
                 onClick={(e) => e.preventDefault()}
               >
                 <Github className="h-3 w-3" />
-                GitHub
+                {t("footer.github")}
               </a>
             </div>
           </div>

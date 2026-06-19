@@ -5,76 +5,86 @@ import { PanelHeader, PanelCard, Stat } from "./panel-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MODULES } from "@/lib/modules";
+import { useT, useLang } from "@/lib/i18n";
 
 export function OverviewPanel() {
+  const t = useT();
+  const lang = useLang((s) => s.lang);
+
   const pillars = [
     {
       icon: Zap,
-      title: "认知主权 (Cognitive Sovereignty)",
-      desc: "PoUE 唯一实体证明 + CIP 意识继承 + CDS 跨维度灵魂绑定。打破私钥诅咒，数字生命跨越生死与载体实现永生。",
+      title: t("overview.pillar1Title"),
+      desc: t("overview.pillar1Desc"),
       accent: "emerald" as const,
       rfc: "§1 / §5.2",
     },
     {
       icon: Shield,
-      title: "反平庸暴政 (Anti-Mediocrity)",
-      desc: "TDPO 时间延迟定价 + CPDF 认知纯度衰减。用时间维度与认知方差，保护并奖励少数派的超前认知，杜绝认知洗钱。",
+      title: t("overview.pillar2Title"),
+      desc: t("overview.pillar2Desc"),
       accent: "amber" as const,
       rfc: "§5.1",
     },
     {
       icon: Heart,
-      title: "虚实同构 (Phygital Isomorphism)",
-      desc: "PCMG 虚实跨膜网关。多模态物理证明 + ECE 情绪共识双重校验。数字意志就是物理世界的绝对法则。",
+      title: t("overview.pillar3Title"),
+      desc: t("overview.pillar3Desc"),
       accent: "rose" as const,
       rfc: "§5.3",
     },
   ];
 
+  const stackItems1 =
+    lang === "zh"
+      ? [
+          "Cognitive-Resonance (报价)",
+          "Time-Lock-Escrow (托管)",
+          "Retroactive-Settle (结算)",
+          "Soul-Bound-Auth (权限)",
+        ]
+      : [
+          "Cognitive-Resonance (Quote)",
+          "Time-Lock-Escrow (Escrow)",
+          "Retroactive-Settle (Settle)",
+          "Soul-Bound-Auth (Auth)",
+        ];
+  const stackItems2 =
+    lang === "zh"
+      ? ["PoUE + PoRC 共识", "认知协处理器", "TEE + ZK-ML", "图存储"]
+      : ["PoUE + PoRC Consensus", "Cognitive Coprocessor", "TEE + ZK-ML", "Graph Storage"];
+  const stackItems3 =
+    lang === "zh"
+      ? ["CIP 注册表", "CDS SBT", "PCMG 网关", "罚没"]
+      : ["CIP Registry", "CDS SBT", "PCMG Gateway", "Slashing"];
+  const stackItems4 =
+    lang === "zh"
+      ? ["TS/Python/Rust SDK", "A2A 发现", "MCP 工具", "M-Pata VC"]
+      : ["TS/Python/Rust SDK", "A2A Discovery", "MCP Tools", "M-Pata VC"];
+
   const stack = [
-    {
-      name: "规范层 AP2 Core Spec",
-      items: [
-        "Cognitive-Resonance (报价)",
-        "Time-Lock-Escrow (托管)",
-        "Retroactive-Settle (结算)",
-        "Soul-Bound-Auth (权限)",
-      ],
-      accent: "emerald",
-    },
-    {
-      name: "共识与计算层 AFC Chain",
-      items: ["PoUE + PoRC 共识", "Cognitive Coprocessor", "TEE + ZK-ML", "Graph Storage"],
-      accent: "cyan",
-    },
-    {
-      name: "灵魂与跨膜层",
-      items: ["CIP Registry", "CDS SBT", "PCMG Gateway", "Slashing"],
-      accent: "violet",
-    },
-    {
-      name: "生态与 SDK 层",
-      items: ["TS/Python/Rust SDK", "A2A Discovery", "MCP Tools", "M-Pata VC"],
-      accent: "amber",
-    },
+    { name: t("overview.layer1"), items: stackItems1, accent: "emerald" },
+    { name: t("overview.layer2"), items: stackItems2, accent: "cyan" },
+    { name: t("overview.layer3"), items: stackItems3, accent: "violet" },
+    { name: t("overview.layer4"), items: stackItems4, accent: "amber" },
   ];
 
   return (
     <div>
       <PanelHeader
         icon={Layers}
-        title="AP2 Protocol Overview"
+        title={t("overview.title")}
         rfcSection="RFC §4"
-        description="Web4.0 Avatar Payments Protocol v1.0 — 数字生命宪法·四层架构·三大宪法原则"
+        description={t("overview.description")}
         accent="emerald"
       />
 
       {/* Hero stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <Stat label="Protocol" value="AP2 v1.0" hint="RFC 001 PROPOSED" accent="emerald" />
-        <Stat label="Modules" value="7" hint="core contracts" accent="cyan" />
-        <Stat label="Consensus" value="PoUE+PoRC" hint="AFC Chain" accent="violet" />
-        <Stat label="Status" value="PROPOSED" hint="2026.06.18" accent="amber" />
+        <Stat label={t("overview.protocol")} value="AP2 v1.0" hint="RFC 001 PROPOSED" accent="emerald" />
+        <Stat label={t("overview.modules")} value="7" hint={lang === "zh" ? "核心合约" : "core contracts"} accent="cyan" />
+        <Stat label={t("overview.consensus")} value="PoUE+PoRC" hint="AFC Chain" accent="violet" />
+        <Stat label={t("overview.statusLabel")} value="PROPOSED" hint="2026.06.18" accent="amber" />
       </div>
 
       {/* Three constitutional pillars */}
@@ -109,7 +119,7 @@ export function OverviewPanel() {
       </div>
 
       {/* 4-layer architecture */}
-      <PanelCard title="协议栈架构 · 4-Layer Stack" icon={Network}>
+      <PanelCard title={t("overview.stackTitle")} icon={Network}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {stack.map((s, i) => (
             <div
@@ -144,7 +154,7 @@ export function OverviewPanel() {
 
       {/* Module map */}
       <div className="mt-6">
-        <PanelCard title="Module Map · 协议模块导航" icon={Crosshair}>
+        <PanelCard title={t("overview.moduleMap")} icon={Crosshair}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {MODULES.filter((m) => m.id !== "overview").map((m) => {
               const Icon = m.icon;
@@ -157,7 +167,7 @@ export function OverviewPanel() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="font-mono text-xs font-semibold">
-                        {m.label}
+                        {t(m.navKey as never)}
                       </span>
                       <Badge
                         variant="outline"

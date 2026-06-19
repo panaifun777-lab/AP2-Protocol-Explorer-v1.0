@@ -52,6 +52,7 @@ import {
   buildRfcPlainText,
   type RfcMermaidDiagram,
 } from "@/lib/rfc-data";
+import { useT, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 // ---------- Markdown-ish content renderer (handles RFC section content) ----------
@@ -209,6 +210,7 @@ function renderInline(text: string): React.ReactNode[] {
 
 // ---------- Sequence Diagram Card ----------
 function DiagramCard({ diagram, index }: { diagram: RfcMermaidDiagram; index: number }) {
+  const t = useT();
   const [showSource, setShowSource] = React.useState(false);
   const [fullscreen, setFullscreen] = React.useState(false);
 
@@ -246,12 +248,12 @@ function DiagramCard({ diagram, index }: { diagram: RfcMermaidDiagram; index: nu
                   {showSource ? (
                     <>
                       <EyeOff className="mr-1 h-3 w-3" />
-                      Hide
+                      {t("rfc.hide")}
                     </>
                   ) : (
                     <>
                       <Eye className="mr-1 h-3 w-3" />
-                      Source
+                      {t("rfc.source")}
                     </>
                   )}
                 </Button>
@@ -262,7 +264,7 @@ function DiagramCard({ diagram, index }: { diagram: RfcMermaidDiagram; index: nu
                   className="h-7 border-border/60 px-2 text-[10px] font-mono"
                 >
                   <Maximize2 className="mr-1 h-3 w-3" />
-                  Full
+                  {t("rfc.full")}
                 </Button>
               </div>
             </div>
@@ -312,6 +314,7 @@ function DiagramCard({ diagram, index }: { diagram: RfcMermaidDiagram; index: nu
 
 // ---------- Document tab (sidebar TOC + main content) ----------
 function DocumentTab() {
+  const t = useT();
   const [activeId, setActiveId] = React.useState(RFC_SECTIONS[0].id);
 
   const handleNav = (anchor: string) => {
@@ -330,7 +333,7 @@ function DocumentTab() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
               <Hash className="h-3.5 w-3.5" />
-              Sections
+              {t("rfc.sections")}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
@@ -395,18 +398,30 @@ function DocumentTab() {
 
 // ---------- Diagrams tab ----------
 function DiagramsTab() {
+  const t = useT();
+  // Hint contains [[Source]] and [[Full]] markers around the words to highlight.
+  const hint = t("rfc.diagramsHint").replace("{n}", String(RFC_MERMAID_DIAGRAMS.length));
+  const parts = React.useMemo(() => {
+    const segments = hint.split(/\[\[|\]\]/g);
+    // segments alternate: text, highlight, text, highlight, text...
+    return segments.map((seg, i) =>
+      i % 2 === 1 ? (
+        <span key={i} className="font-mono text-emerald-300">
+          {seg}
+        </span>
+      ) : (
+        <React.Fragment key={i}>{seg}</React.Fragment>
+      ),
+    );
+  }, [hint]);
+
   return (
     <div className="space-y-4">
       <Card className="border-border/60 bg-card/40">
         <CardContent className="py-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <GitBranch className="h-3.5 w-3.5 text-emerald-400" />
-            <span>
-              {RFC_MERMAID_DIAGRAMS.length} Mermaid sequence diagrams extracted verbatim from RFC
-              v1.0 §机制序列图. Click <span className="font-mono text-emerald-300">Source</span> to
-              view the raw diagram code, or <span className="font-mono text-emerald-300">Full</span>{" "}
-              for fullscreen.
-            </span>
+            <span>{parts}</span>
           </div>
         </CardContent>
       </Card>
@@ -422,16 +437,18 @@ function DiagramsTab() {
 
 // ---------- Contracts & Test Vectors tab ----------
 function ContractsTab() {
+  const t = useT();
+  const contractsHint = t("rfc.contractsHint")
+    .replace("{n}", String(RFC_CONTRACTS.length))
+    .replace("{m}", String(RFC_TEST_VECTORS.length));
+
   return (
     <div className="space-y-4">
       <Card className="border-border/60 bg-card/40">
         <CardContent className="py-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Code2 className="h-3.5 w-3.5 text-emerald-400" />
-            <span>
-              {RFC_CONTRACTS.length} Solidity reference contracts + {RFC_TEST_VECTORS.length} RFC
-              test vectors. Source copied verbatim from the RFC.
-            </span>
+            <span>{contractsHint}</span>
           </div>
         </CardContent>
       </Card>
@@ -474,12 +491,12 @@ function ContractsTab() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 font-mono text-sm">
             <FlaskConical className="h-4 w-4 text-amber-400" />
-            RFC Test Vectors
+            {t("rfc.testVectorsTitle")}
             <Badge
               variant="outline"
               className="ml-1 border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300"
             >
-              {RFC_TEST_VECTORS.length} vectors
+              {t("rfc.vectorsCount").replace("{n}", String(RFC_TEST_VECTORS.length))}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -510,6 +527,8 @@ function ContractsTab() {
 
 // ---------- Main panel ----------
 export function RfcPanel() {
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   const handleDownload = React.useCallback(() => {
     const text = buildRfcPlainText();
     const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
@@ -527,9 +546,9 @@ export function RfcPanel() {
     <div>
       <PanelHeader
         icon={FileText}
-        title="RFC Document & Diagrams"
+        title={t("rfc.title")}
         rfcSection="RFC Full"
-        description="Full RFC v1.0 text · 7 Mermaid sequence diagrams · Solidity contracts · test vectors"
+        description={t("rfc.description")}
         accent="emerald"
         actions={
           <Button
@@ -539,7 +558,7 @@ export function RfcPanel() {
             className="border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-200"
           >
             <Download className="mr-1.5 h-3.5 w-3.5" />
-            Download RFC
+            {t("rfc.downloadRfc")}
           </Button>
         }
       />
@@ -575,7 +594,7 @@ export function RfcPanel() {
                 <span className="flex items-center gap-1.5">
                   <Layers className="h-3.5 w-3.5 text-emerald-400" />
                   <span className="font-mono">
-                    deps: {RFC_META.dependencies.join(" · ")}
+                    {t("rfc.depsLabel")}: {RFC_META.dependencies.join(" · ")}
                   </span>
                 </span>
               </div>
@@ -588,7 +607,7 @@ export function RfcPanel() {
                 className="flex items-center gap-1 rounded border border-border/60 px-2 py-1 transition-colors hover:border-emerald-500/40 hover:text-emerald-300"
               >
                 <ExternalLink className="h-3 w-3" />
-                Seed DB
+                {t("rfc.seedDb")}
               </a>
             </div>
           </div>
@@ -599,7 +618,7 @@ export function RfcPanel() {
         <TabsList className="h-auto flex-wrap gap-0.5">
           <TabsTrigger value="document" className="gap-1.5 py-1.5">
             <BookOpen className="h-3.5 w-3.5" />
-            <span className="text-xs">Document</span>
+            <span className="text-xs">{t("rfc.tabDocument")}</span>
             <Badge
               variant="outline"
               className="ml-1 border-border/60 px-1 py-0 text-[9px] text-muted-foreground"
@@ -609,7 +628,7 @@ export function RfcPanel() {
           </TabsTrigger>
           <TabsTrigger value="diagrams" className="gap-1.5 py-1.5">
             <GitBranch className="h-3.5 w-3.5" />
-            <span className="text-xs">Sequence Diagrams</span>
+            <span className="text-xs">{t("rfc.tabDiagrams")}</span>
             <Badge
               variant="outline"
               className="ml-1 border-border/60 px-1 py-0 text-[9px] text-muted-foreground"
@@ -619,7 +638,7 @@ export function RfcPanel() {
           </TabsTrigger>
           <TabsTrigger value="contracts" className="gap-1.5 py-1.5">
             <Code2 className="h-3.5 w-3.5" />
-            <span className="text-xs">Contracts & Test Vectors</span>
+            <span className="text-xs">{t("rfc.tabContracts")}</span>
             <Badge
               variant="outline"
               className="ml-1 border-border/60 px-1 py-0 text-[9px] text-muted-foreground"

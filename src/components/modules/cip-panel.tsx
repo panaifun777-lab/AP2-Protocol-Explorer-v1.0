@@ -54,6 +54,7 @@ import {
   MIN_THRESHOLD,
   classifyMatchScore,
 } from "@/lib/contracts/cip";
+import { useT, useLang } from "@/lib/i18n";
 
 // ============================================================
 // Local view types (decoded from the API; matches shared types
@@ -176,6 +177,7 @@ function MatchScoreSlider({
   value: number;
   onChange: (v: number) => void;
 }) {
+  const t = useT();
   const { band } = classifyMatchScore(value);
   const zoneColor =
     band === "pure"
@@ -186,7 +188,7 @@ function MatchScoreSlider({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <Label className="font-mono text-xs">Cognitive Match Score (BPS)</Label>
+        <Label className="font-mono text-xs">{t("cip.cognitiveMatchScoreLabel")}</Label>
         <span
           className={`font-mono text-sm font-bold ${zoneColor}`}
         >
@@ -271,6 +273,7 @@ function AvatarPill({
   label?: string;
   accent?: "violet" | "emerald" | "rose" | "amber" | "cyan";
 }) {
+  const lang = useLang((s) => s.lang);
   const accentMap: Record<string, string> = {
     violet: "border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-400",
     emerald: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
@@ -283,7 +286,7 @@ function AvatarPill({
       className={`rounded-md border px-2.5 py-1.5 ${accentMap[accent]}`}
     >
       <div className="font-mono text-[9px] uppercase tracking-wider opacity-70">
-        {label ?? "Avatar"}
+        {label ?? (lang === "zh" ? "分身" : "Avatar")}
       </div>
       <div className="font-mono text-xs font-semibold leading-tight">
         {avatar?.name ?? "—"}
@@ -307,6 +310,7 @@ function CDSTokenCard({
   owner: Avatar | null;
   compact?: boolean;
 }) {
+  const t = useT();
   return (
     <motion.div
       layout
@@ -334,7 +338,7 @@ function CDSTokenCard({
           className="font-mono text-[9px] gap-1 border-violet-500/40 text-violet-600 dark:text-violet-400"
         >
           <Lock className="h-2.5 w-2.5" />
-          SOULBOUND
+          {t("cip.soulbound")}
         </Badge>
       </div>
       {!compact && (
@@ -351,7 +355,7 @@ function CDSTokenCard({
             </div>
             <div className="flex items-center justify-between gap-2">
               <span className="font-mono text-[10px] text-muted-foreground">
-                owner
+                {t("cip.owner")}
               </span>
               <span className="font-mono text-[10px] truncate max-w-[180px]">
                 {owner?.name ?? shortAddr(token.ownerAvatarId)}
@@ -359,7 +363,7 @@ function CDSTokenCard({
             </div>
             <div className="flex items-center justify-between gap-2">
               <span className="font-mono text-[10px] text-muted-foreground">
-                minted
+                {t("cip.mintedLabel")}
               </span>
               <span className="font-mono text-[10px]">
                 {formatDate(token.mintTimestamp)}
@@ -377,6 +381,8 @@ function CDSTokenCard({
 // ============================================================
 export function CipPanel() {
   const { toast } = useToast();
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   const [data, setData] = React.useState<ListResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [tab, setTab] = React.useState("register");
@@ -389,14 +395,14 @@ export function CipPanel() {
         setData(parseFromJson<ListResponse>(json.data));
       } else {
         toast({
-          title: "Failed to load CIP registry",
+          title: lang === "zh" ? "加载 CIP 注册表失败" : "Failed to load CIP registry",
           description: json.error,
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -422,8 +428,8 @@ export function CipPanel() {
   const runProphetRebirth = async () => {
     if (!data?.avatars.length) {
       toast({
-        title: "No avatars loaded",
-        description: "Wait for the seed to finish first.",
+        title: lang === "zh" ? "未加载分身" : "No avatars loaded",
+        description: lang === "zh" ? "请等待种子数据完成。" : "Wait for the seed to finish first.",
         variant: "destructive",
       });
       return;
@@ -461,8 +467,10 @@ export function CipPanel() {
           throw new Error(regJson.error ?? "register failed");
         }
         toast({
-          title: "Prophet consciousness registered",
-          description: `entityId=${shortAddr(entityId)} · carrier=${prophet.name}`,
+          title: lang === "zh" ? "先知意识已注册" : "Prophet consciousness registered",
+          description: lang === "zh"
+            ? `entityId=${shortAddr(entityId)} · 载体=${prophet.name}`
+            : `entityId=${shortAddr(entityId)} · carrier=${prophet.name}`,
         });
       }
 
@@ -480,8 +488,10 @@ export function CipPanel() {
         throw new Error(mintJson.error ?? "mint failed");
       }
       toast({
-        title: "CDS SBT minted to prophet",
-        description: `tokenId #${mintJson.data.tokenId} · soulbound to ${shortAddr(entityId)}`,
+        title: lang === "zh" ? "CDS SBT 已铸造给先知" : "CDS SBT minted to prophet",
+        description: lang === "zh"
+          ? `tokenId #${mintJson.data.tokenId} · 灵魂绑定到 ${shortAddr(entityId)}`
+          : `tokenId #${mintJson.data.tokenId} · soulbound to ${shortAddr(entityId)}`,
       });
 
       // 2. Simulate "physical death" + consciousness migration with matchScore=9250
@@ -508,15 +518,17 @@ export function CipPanel() {
         newAddressId: string;
       }>(migJson.data);
       toast({
-        title: "✓ Consciousness migrated — PURE_INHERITANCE",
-        description: `matchScore=${(r.matchScore / 100).toFixed(2)}% · ${r.transferredTokens.length} SBT(s) followed the soul to ${backup.name}`,
+        title: lang === "zh" ? "✓ 意识已迁移 — 纯粹继承" : "✓ Consciousness migrated — PURE_INHERITANCE",
+        description: lang === "zh"
+          ? `matchScore=${(r.matchScore / 100).toFixed(2)}% · ${r.transferredTokens.length} 个 SBT 已跟随灵魂至 ${backup.name}`
+          : `matchScore=${(r.matchScore / 100).toFixed(2)}% · ${r.transferredTokens.length} SBT(s) followed the soul to ${backup.name}`,
       });
 
       await refresh();
       setTab("migrate");
     } catch (e) {
       toast({
-        title: "Prophet rebirth failed",
+        title: lang === "zh" ? "先知重生失败" : "Prophet rebirth failed",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -529,9 +541,9 @@ export function CipPanel() {
     <div>
       <PanelHeader
         icon={Heart}
-        title="CIP + CDS Soulbound"
+        title={t("cip.title")}
         rfcSection="RFC §5.2"
-        description="Consciousness inheritance protocol · cross-dimensional soulbound token · three-zone lineage routing (pure / fusion / hijack)"
+        description={t("cip.description")}
         accent="violet"
         actions={
           <>
@@ -545,7 +557,7 @@ export function CipPanel() {
               <RefreshCw
                 className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
               />
-              Refresh
+              {t("header.refresh")}
             </Button>
             <Button
               size="sm"
@@ -558,7 +570,7 @@ export function CipPanel() {
               ) : (
                 <PlayCircle className="h-3.5 w-3.5" />
               )}
-              Prophet Rebirth
+              {t("cip.prophetRebirthBtn")}
             </Button>
           </>
         }
@@ -567,27 +579,27 @@ export function CipPanel() {
       {/* ===== Stats row ===== */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Stat
-          label="Total Entities"
+          label={t("cip.totalEntities")}
           value={stats.totalEntities}
-          hint="consciousness records"
+          hint={t("cip.hintConsciousnessRecords")}
           accent="violet"
         />
         <Stat
-          label="Total Migrations"
+          label={t("cip.totalMigrations")}
           value={stats.totalMigrations}
-          hint={`${stats.migratedEntities} entities migrated`}
+          hint={`${stats.migratedEntities} ${t("cip.entitiesMigratedSuffix")}`}
           accent="cyan"
         />
         <Stat
-          label="CDS SBTs Minted"
+          label={t("cip.cdsMinted")}
           value={stats.cdsTokensMinted}
-          hint="soulbound tokens"
+          hint={t("cip.hintSoulboundTokens")}
           accent="emerald"
         />
         <Stat
-          label="Avg Match Score"
+          label={t("cip.avgMatchScore")}
           value={`${(stats.avgMatchScore / 100).toFixed(1)}%`}
-          hint={`last-match avg (BPS ${stats.avgMatchScore})`}
+          hint={`${t("cip.lastMatchAvgLabel")} (BPS ${stats.avgMatchScore})`}
           accent="amber"
         />
       </div>
@@ -596,15 +608,15 @@ export function CipPanel() {
         <TabsList className="h-9">
           <TabsTrigger value="register" className="font-mono text-xs">
             <Fingerprint className="h-3.5 w-3.5" />
-            Register &amp; Mint
+            {t("cip.tabRegister")}
           </TabsTrigger>
           <TabsTrigger value="migrate" className="font-mono text-xs">
             <Skull className="h-3.5 w-3.5" />
-            Consciousness Migration
+            {t("cip.tabMigrate")}
           </TabsTrigger>
           <TabsTrigger value="soulbound" className="font-mono text-xs">
             <ShieldBan className="h-3.5 w-3.5" />
-            SBT Soulbound Test
+            {t("cip.tabSoulbound")}
           </TabsTrigger>
         </TabsList>
 
@@ -649,6 +661,8 @@ function RegisterMintTab({
   onChanged: () => void;
 }) {
   const { toast } = useToast();
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   const avatars = data?.avatars ?? [];
 
   const [entityId, setEntityId] = React.useState(() =>
@@ -683,8 +697,10 @@ function RegisterMintTab({
   const onRegister = async () => {
     if (!entityId.trim() || !cognitiveRoot.trim() || !creatorId) {
       toast({
-        title: "Missing fields",
-        description: "entityId, cognitiveRoot and creator avatar are required.",
+        title: lang === "zh" ? "缺少字段" : "Missing fields",
+        description: lang === "zh"
+          ? "需要 entityId、认知指纹根和创建者分身。"
+          : "entityId, cognitiveRoot and creator avatar are required.",
         variant: "destructive",
       });
       return;
@@ -708,13 +724,15 @@ function RegisterMintTab({
       const rec = parseFromJson<CIPRecordView>(json.data);
       setRegistered(rec);
       toast({
-        title: "Consciousness registered",
-        description: `entityId=${shortAddr(rec.entityId)} · active=${rec.activeAvatar?.name ?? "—"}`,
+        title: lang === "zh" ? "意识已注册" : "Consciousness registered",
+        description: lang === "zh"
+          ? `entityId=${shortAddr(rec.entityId)} · 活跃=${rec.activeAvatar?.name ?? "—"}`
+          : `entityId=${shortAddr(rec.entityId)} · active=${rec.activeAvatar?.name ?? "—"}`,
       });
       onChanged();
     } catch (e) {
       toast({
-        title: "Registration failed",
+        title: lang === "zh" ? "注册失败" : "Registration failed",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -727,7 +745,7 @@ function RegisterMintTab({
     if (!registered) return;
     if (!metadataHash.trim()) {
       toast({
-        title: "Missing metadataHash",
+        title: lang === "zh" ? "缺少 metadataHash" : "Missing metadataHash",
         variant: "destructive",
       });
       return;
@@ -749,13 +767,15 @@ function RegisterMintTab({
       const tok = parseFromJson<CDSTokenView>(json.data);
       setMintedToken(tok);
       toast({
-        title: "CDS SBT minted",
-        description: `tokenId #${tok.tokenId} · soulbound to ${shortAddr(tok.entityId)}`,
+        title: lang === "zh" ? "CDS SBT 已铸造" : "CDS SBT minted",
+        description: lang === "zh"
+          ? `tokenId #${tok.tokenId} · 灵魂绑定到 ${shortAddr(tok.entityId)}`
+          : `tokenId #${tok.tokenId} · soulbound to ${shortAddr(tok.entityId)}`,
       });
       onChanged();
     } catch (e) {
       toast({
-        title: "Mint failed",
+        title: lang === "zh" ? "铸造失败" : "Mint failed",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -788,7 +808,7 @@ function RegisterMintTab({
                 variant="outline"
                 size="icon"
                 onClick={() => setEntityId(randHex("0xEntity", 8))}
-                title="Regenerate"
+                title={t("cip.regenerateTitle")}
               >
                 <Sparkles className="h-3.5 w-3.5" />
               </Button>
@@ -811,7 +831,7 @@ function RegisterMintTab({
                 variant="outline"
                 size="icon"
                 onClick={() => setCognitiveRoot(randHex("0xRoot", 12))}
-                title="Regenerate"
+                title={t("cip.regenerateTitle")}
               >
                 <Sparkles className="h-3.5 w-3.5" />
               </Button>
@@ -819,10 +839,10 @@ function RegisterMintTab({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="font-mono text-xs">creator avatar</Label>
+            <Label className="font-mono text-xs">{t("cip.creatorAvatarLabel")}</Label>
             <Select value={creatorId} onValueChange={setCreatorId}>
               <SelectTrigger className="font-mono text-xs w-full">
-                <SelectValue placeholder="Select creator avatar" />
+                <SelectValue placeholder={t("cip.selectCreatorAvatarPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {avatars.map((a) => (
@@ -868,7 +888,7 @@ function RegisterMintTab({
             ) : (
               <Fingerprint className="h-3.5 w-3.5" />
             )}
-            Register Consciousness
+            {t("cip.registerConsciousnessBtn")}
           </Button>
 
           {registered && (
@@ -880,13 +900,13 @@ function RegisterMintTab({
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                 <span className="font-mono text-xs font-semibold">
-                  Consciousness live
+                  {t("cip.consciousnessLiveLabel")}
                 </span>
                 <Badge
                   variant="outline"
                   className="ml-auto font-mono text-[9px] border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
                 >
-                  ACTIVE
+                  {t("cip.activeBadge")}
                 </Badge>
               </div>
               <div className="grid grid-cols-2 gap-2 font-mono text-[10px]">
@@ -901,11 +921,11 @@ function RegisterMintTab({
                   </div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">created</div>
+                  <div className="text-muted-foreground">{t("cip.createdAtLabel")}</div>
                   <div>{formatDate(registered.creationTimestamp)}</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">active carrier</div>
+                  <div className="text-muted-foreground">{t("cip.activeCarrierLabel")}</div>
                   <div className="truncate">
                     {registered.activeAvatar?.name ?? "—"}
                   </div>
@@ -918,35 +938,35 @@ function RegisterMintTab({
 
       {/* ===== Right: Mint SBT sub-form ===== */}
       <PanelCard
-        title="CDSSBT.mint(entityId, tokenId, metadataHash) — bound to entityId, not address"
+        title={`CDSSBT.mint(entityId, tokenId, metadataHash) — ${lang === "zh" ? "绑定到 entityId,而非 address" : "bound to entityId, not address"}`}
         icon={KeyRound}
       >
         {!registered ? (
           <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
             <Fingerprint className="h-8 w-8 mb-2 opacity-40" />
             <p className="font-mono text-xs">
-              Register a consciousness entity first.
+              {t("cip.registerFirst")}
             </p>
             <p className="font-mono text-[10px] mt-1 opacity-70">
-              The mint sub-form will unlock here.
+              {t("cip.mintSubFormUnlock")}
             </p>
           </div>
         ) : (
           <div className="space-y-3">
             <div className="rounded-md border border-violet-500/30 bg-violet-500/5 p-2.5">
               <div className="font-mono text-[10px] text-muted-foreground">
-                minting against entityId
+                {t("cip.mintAgainstEntity")}
               </div>
               <div className="font-mono text-xs font-semibold truncate">
                 {shortAddr(registered.entityId)}
               </div>
               <div className="font-mono text-[10px] text-muted-foreground mt-1">
-                active address → {creator?.name ?? "—"}
+                {t("cip.activeAddressLabel")} → {creator?.name ?? "—"}
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="font-mono text-xs">metadataHash (cognitive hash stored in SBT)</Label>
+              <Label className="font-mono text-xs">{t("cip.metadataHashCognitiveLabel")}</Label>
               <div className="flex gap-2">
                 <Input
                   value={metadataHash}
@@ -959,7 +979,7 @@ function RegisterMintTab({
                   variant="outline"
                   size="icon"
                   onClick={() => setMetadataHash(randHex("0xMetaHash", 12))}
-                  title="Regenerate"
+                  title={t("cip.regenerateTitle")}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                 </Button>
@@ -988,7 +1008,7 @@ function RegisterMintTab({
               ) : (
                 <Coins className="h-3.5 w-3.5" />
               )}
-              Mint CDS SBT
+              {t("cip.mintSbt")}
             </Button>
 
             <AnimatePresence mode="wait">
@@ -1009,12 +1029,12 @@ function RegisterMintTab({
 
       {/* ===== Existing entities (full width) ===== */}
       <PanelCard
-        title="Registered Consciousness Entities"
+        title={t("cip.registeredEntitiesTitle")}
         icon={Heart}
         className="lg:col-span-2"
         action={
           <Badge variant="outline" className="font-mono text-[10px]">
-            {data?.records.length ?? 0} records
+            {data?.records.length ?? 0} {t("cip.recordsCountSuffix")}
           </Badge>
         }
       >
@@ -1022,12 +1042,11 @@ function RegisterMintTab({
           {loading ? (
             <div className="text-center py-8 text-muted-foreground font-mono text-xs">
               <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
-              Loading registry…
+              {t("cip.loadingRegistry")}
             </div>
           ) : !data?.records.length ? (
             <div className="text-center py-8 text-muted-foreground font-mono text-xs">
-              No consciousness records yet. Register one above or run the Prophet
-              Rebirth scenario.
+              {t("cip.noRecordsHint")}
             </div>
           ) : (
             data.records.map((r) => (
@@ -1047,7 +1066,7 @@ function RegisterMintTab({
                         className="font-mono text-[9px] border-amber-500/40 text-amber-600 dark:text-amber-400"
                       >
                         <Skull className="h-2.5 w-2.5" />
-                        MIGRATED × {r.migrationCount}
+                        {t("cip.migratedBadge")} × {r.migrationCount}
                       </Badge>
                     )}
                   </div>
@@ -1058,12 +1077,12 @@ function RegisterMintTab({
                         className="font-mono text-[9px] gap-1"
                       >
                         <Zap className="h-2.5 w-2.5" />
-                        last {(r.lastMatchScore / 100).toFixed(1)}%
+                        {t("cip.lastMatchBadge")} {(r.lastMatchScore / 100).toFixed(1)}%
                       </Badge>
                     )}
                     <AvatarPill
                       avatar={r.activeAvatar}
-                      label="active"
+                      label={t("cip.activePillLabel")}
                       accent="violet"
                     />
                   </div>
@@ -1090,6 +1109,8 @@ function MigrationTab({
   onChanged: () => void;
 }) {
   const { toast } = useToast();
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   const records = data?.records ?? [];
   const avatars = data?.avatars ?? [];
 
@@ -1132,16 +1153,20 @@ function MigrationTab({
   const onMigrate = async () => {
     if (!entityId || !newAvatarId) {
       toast({
-        title: "Missing fields",
-        description: "Select an entity and a new active avatar.",
+        title: lang === "zh" ? "缺少字段" : "Missing fields",
+        description: lang === "zh"
+          ? "请选择实体和新活跃分身。"
+          : "Select an entity and a new active avatar.",
         variant: "destructive",
       });
       return;
     }
     if (selectedRecord && newAvatarId === selectedRecord.currentActiveAddressId) {
       toast({
-        title: "Same carrier",
-        description: "New active avatar must differ from the current one.",
+        title: lang === "zh" ? "相同载体" : "Same carrier",
+        description: lang === "zh"
+          ? "新活跃分身必须与当前分身不同。"
+          : "New active avatar must differ from the current one.",
         variant: "destructive",
       });
       return;
@@ -1180,7 +1205,7 @@ function MigrationTab({
           });
         }
         toast({
-          title: "Migration REJECTED",
+          title: lang === "zh" ? "迁移被拒绝" : "Migration REJECTED",
           description: json.error,
           variant: "destructive",
         });
@@ -1205,14 +1230,14 @@ function MigrationTab({
       toast({
         title:
           r.outcome === "PURE_INHERITANCE"
-            ? "✓ Pure inheritance — SBT followed the soul"
-            : "✓ Fusion emergence — lineage split flagged",
+            ? (lang === "zh" ? "✓ 纯粹继承 — SBT 已跟随灵魂" : "✓ Pure inheritance — SBT followed the soul")
+            : (lang === "zh" ? "✓ 融合涌现 — 已标记谱系分账" : "✓ Fusion emergence — lineage split flagged"),
         description: r.reason,
       });
       onChanged();
     } catch (e) {
       toast({
-        title: "Migration failed",
+        title: lang === "zh" ? "迁移失败" : "Migration failed",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -1229,10 +1254,10 @@ function MigrationTab({
       >
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="font-mono text-xs">consciousness entity</Label>
+            <Label className="font-mono text-xs">{t("cip.consciousnessEntityLabel")}</Label>
             <Select value={entityId} onValueChange={setEntityId}>
               <SelectTrigger className="font-mono text-xs w-full">
-                <SelectValue placeholder="Select entityId" />
+                <SelectValue placeholder={t("cip.selectEntityIdPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {records.map((r) => (
@@ -1254,7 +1279,7 @@ function MigrationTab({
                 ))}
                 {records.length === 0 && (
                   <div className="px-2 py-1.5 text-xs text-muted-foreground font-mono">
-                    No entities — register one first.
+                    {t("cip.noEntitiesHint")}
                   </div>
                 )}
               </SelectContent>
@@ -1262,10 +1287,10 @@ function MigrationTab({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="font-mono text-xs">new active avatar (backup carrier)</Label>
+            <Label className="font-mono text-xs">{t("cip.newActiveAvatarLabel")}</Label>
             <Select value={newAvatarId} onValueChange={setNewAvatarId}>
               <SelectTrigger className="font-mono text-xs w-full">
-                <SelectValue placeholder="Select new active avatar" />
+                <SelectValue placeholder={t("cip.selectNewActiveAvatarPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {avatars.map((a) => (
@@ -1299,7 +1324,7 @@ function MigrationTab({
           >
             <div className="flex items-center justify-between gap-2">
               <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                Preview
+                {t("cip.previewLabel")}
               </span>
               <OutcomeBadge
                 outcome={preview.outcome}
@@ -1307,12 +1332,9 @@ function MigrationTab({
               />
             </div>
             <p className="font-mono text-[11px] mt-2 text-muted-foreground leading-relaxed">
-              {preview.band === "pure" &&
-                "matchScore ≥ 8500 (85%) — pure inheritance. SBT soulTransfer fires for every token bound to this entity. tokenId + metadataHash unchanged; only owner pointer rotates."}
-              {preview.band === "fusion" &&
-                "6000 ≤ matchScore < 8500 — fusion emergence. Active address rotates, requiresLineageSplit=true is flagged for the DAG module to split the reward across the cognitive lineage."}
-              {preview.band === "hijack" &&
-                "matchScore < 6000 — cognition completely compromised. NO state mutation. Migration rejected with 400. Possible hijack / soul theft attempt."}
+              {preview.band === "pure" && t("cip.previewPureDesc")}
+              {preview.band === "fusion" && t("cip.previewFusionDesc")}
+              {preview.band === "hijack" && t("cip.previewHijackDesc")}
             </p>
           </div>
 
@@ -1333,13 +1355,13 @@ function MigrationTab({
             ) : (
               <Ghost className="h-3.5 w-3.5" />
             )}
-            Execute Migration
+            {t("cip.executeMigration")}
           </Button>
         </div>
       </PanelCard>
 
       <PanelCard
-        title="Soul Transfer Visualization"
+        title={t("cip.soulTransferVizTitle")}
         icon={HeartPulse}
       >
         <div className="space-y-4">
@@ -1347,12 +1369,12 @@ function MigrationTab({
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
             <div className="space-y-2">
               <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground text-center">
-                Old Carrier
+                {t("cip.oldCarrierLabel")}
               </div>
-              <AvatarPill avatar={oldAvatar} label="deceased" accent="rose" />
+              <AvatarPill avatar={oldAvatar} label={t("cip.deceasedPillLabel")} accent="rose" />
               {selectedRecord && (
                 <div className="text-center font-mono text-[10px] text-muted-foreground">
-                  migrations: {selectedRecord.migrationCount}
+                  {t("cip.migrationsCountLabel")}: {selectedRecord.migrationCount}
                 </div>
               )}
             </div>
@@ -1366,11 +1388,11 @@ function MigrationTab({
 
             <div className="space-y-2">
               <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground text-center">
-                New Carrier
+                {t("cip.newCarrierLabel")}
               </div>
-              <AvatarPill avatar={newAvatar} label="reborn" accent="emerald" />
+              <AvatarPill avatar={newAvatar} label={t("cip.rebornPillLabel")} accent="emerald" />
               <div className="text-center font-mono text-[10px] text-muted-foreground">
-                matchScore {(matchScore / 100).toFixed(2)}%
+                {t("cip.matchScorePercentLabel")} {(matchScore / 100).toFixed(2)}%
               </div>
             </div>
           </div>
@@ -1381,16 +1403,16 @@ function MigrationTab({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                CDS SBTs bound to this entity
+                {t("cip.cdsSbtsBoundLabel")}
               </span>
               <Badge variant="outline" className="font-mono text-[9px]">
-                {entityTokens.length} token(s)
+                {entityTokens.length} {t("cip.tokenCountSuffix")}
               </Badge>
             </div>
             <div className="max-h-56 overflow-y-auto scrollbar-cyber space-y-2 pr-1">
               {entityTokens.length === 0 ? (
                 <div className="text-center py-4 font-mono text-[11px] text-muted-foreground">
-                  No SBTs bound yet — mint one in the Register tab.
+                  {t("cip.noSbtsBoundHint")}
                 </div>
               ) : (
                 entityTokens.map((t) => {
@@ -1451,7 +1473,7 @@ function MigrationTab({
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Last Result
+                    {t("cip.lastResultLabel")}
                   </span>
                   <OutcomeBadge
                     outcome={lastResult.outcome}
@@ -1463,21 +1485,19 @@ function MigrationTab({
                 </p>
                 {lastResult.outcome === "PURE_INHERITANCE" && (
                   <p className="font-mono text-[11px] mt-1 text-emerald-600 dark:text-emerald-400">
-                    ✓ {lastResult.transferredTokens.length} SBT(s)
-                    soulTransfer&apos;d — tokenId &amp; metadataHash unchanged,
-                    only ownerAvatarId rotated.
+                    {lang === "zh"
+                      ? `✓ ${lastResult.transferredTokens.length} 个 SBT 已灵魂转移 — tokenId 与 metadataHash 不变,仅 ownerAvatarId 轮转。`
+                      : `✓ ${lastResult.transferredTokens.length} SBT(s) soulTransfer'd — tokenId & metadataHash unchanged, only ownerAvatarId rotated.`}
                   </p>
                 )}
                 {lastResult.outcome === "FUSION_EMERGENCE" && (
                   <p className="font-mono text-[11px] mt-1 text-amber-600 dark:text-amber-400">
-                    ⚠ requiresLineageSplit=true — DAG module will split the
-                    reward across the cognitive lineage.
+                    {t("cip.fusionResultDesc")}
                   </p>
                 )}
                 {lastResult.outcome === "HIJACK_REJECTED" && (
                   <p className="font-mono text-[11px] mt-1 text-rose-600 dark:text-rose-400">
-                    ✗ No state mutated. Old carrier remains active. Possible
-                    hijack / soul theft attempt.
+                    {t("cip.hijackResultDesc")}
                   </p>
                 )}
               </motion.div>
@@ -1502,6 +1522,8 @@ function SoulboundTestTab({
   onChanged: () => void;
 }) {
   const { toast } = useToast();
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   const tokens = data?.tokens ?? [];
   const avatars = data?.avatars ?? [];
 
@@ -1540,14 +1562,16 @@ function SoulboundTestTab({
     await new Promise((r) => setTimeout(r, 350));
     setManualAttempt({
       success: false,
-      message:
-        "CDS: Soulbound token cannot be manually transferred. Only Consciousness Migration allowed.",
+      message: lang === "zh"
+        ? "CDS: 灵魂绑定代币无法手动转移。仅允许意识迁移。"
+        : "CDS: Soulbound token cannot be manually transferred. Only Consciousness Migration allowed.",
       at: Date.now(),
     });
     toast({
-      title: "transferFrom reverted",
-      description:
-        "CDS: Soulbound token cannot be manually transferred. Only Consciousness Migration allowed.",
+      title: lang === "zh" ? "transferFrom 已回滚" : "transferFrom reverted",
+      description: lang === "zh"
+        ? "CDS: 灵魂绑定代币无法手动转移。仅允许意识迁移。"
+        : "CDS: Soulbound token cannot be manually transferred. Only Consciousness Migration allowed.",
       variant: "destructive",
     });
   };
@@ -1585,12 +1609,16 @@ function SoulboundTestTab({
       }>(migJson.data);
       setCipMigrationSuccess({
         success: true,
-        message: `CIP triggered soulTransfer for ${r.transferredTokens.length} SBT(s) · tokenId #${selectedToken.tokenId} preserved · owner rotated → ${backup.name}`,
+        message: lang === "zh"
+          ? `CIP 已为 ${r.transferredTokens.length} 个 SBT 触发灵魂转移 · tokenId #${selectedToken.tokenId} 已保留 · 所有者轮转 → ${backup.name}`
+          : `CIP triggered soulTransfer for ${r.transferredTokens.length} SBT(s) · tokenId #${selectedToken.tokenId} preserved · owner rotated → ${backup.name}`,
         at: Date.now(),
       });
       toast({
-        title: "✓ soulTransfer succeeded",
-        description: `CIP routed SBT #${selectedToken.tokenId} to ${backup.name} · tokenId + metadataHash unchanged`,
+        title: lang === "zh" ? "✓ 灵魂转移成功" : "✓ soulTransfer succeeded",
+        description: lang === "zh"
+          ? `CIP 已将 SBT #${selectedToken.tokenId} 路由至 ${backup.name} · tokenId + metadataHash 不变`
+          : `CIP routed SBT #${selectedToken.tokenId} to ${backup.name} · tokenId + metadataHash unchanged`,
       });
       onChanged();
     } catch (e) {
@@ -1600,7 +1628,7 @@ function SoulboundTestTab({
         at: Date.now(),
       });
       toast({
-        title: "CIP migration failed",
+        title: lang === "zh" ? "CIP 迁移失败" : "CIP migration failed",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -1612,15 +1640,15 @@ function SoulboundTestTab({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <PanelCard
-        title="CDSSBT.transferFrom — always reverts"
+        title={`CDSSBT.transferFrom — ${lang === "zh" ? "始终回滚" : "always reverts"}`}
         icon={ShieldBan}
       >
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="font-mono text-xs">target CDS token</Label>
+            <Label className="font-mono text-xs">{t("cip.targetCdsTokenLabel")}</Label>
             <Select value={tokenId} onValueChange={setTokenId}>
               <SelectTrigger className="font-mono text-xs w-full">
-                <SelectValue placeholder="Select a CDS SBT" />
+                <SelectValue placeholder={t("cip.selectCdsSbtPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {tokens.map((t) => (
@@ -1640,7 +1668,7 @@ function SoulboundTestTab({
                 ))}
                 {tokens.length === 0 && (
                   <div className="px-2 py-1.5 text-xs text-muted-foreground font-mono">
-                    No SBTs — mint one in the Register tab.
+                    {t("cip.noSbtsHint")}
                   </div>
                 )}
               </SelectContent>
@@ -1649,14 +1677,14 @@ function SoulboundTestTab({
 
           <div className="space-y-1.5">
             <Label className="font-mono text-xs">
-              malicious actor (attempted recipient)
+              {t("cip.maliciousActorLabel")}
             </Label>
             <Select
               value={maliciousAvatarId}
               onValueChange={setMaliciousAvatarId}
             >
               <SelectTrigger className="font-mono text-xs w-full">
-                <SelectValue placeholder="Select malicious actor" />
+                <SelectValue placeholder={t("cip.selectMaliciousActorPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {avatars.map((a) => (
@@ -1705,7 +1733,7 @@ function SoulboundTestTab({
             className="w-full font-mono text-xs"
           >
             <ShieldBan className="h-3.5 w-3.5" />
-            Attempt Manual Transfer
+            {t("cip.attemptManualTransfer")}
           </Button>
 
           <AnimatePresence>
@@ -1727,13 +1755,13 @@ function SoulboundTestTab({
                     <XCircle className="h-4 w-4 text-rose-500" />
                   )}
                   <span className="font-mono text-xs font-semibold">
-                    {manualAttempt.success ? "SUCCESS" : "REVERTED"}
+                    {manualAttempt.success ? t("cip.successBadge") : t("cip.revertedLabel")}
                   </span>
                   <Badge
                     variant="outline"
                     className="ml-auto font-mono text-[9px] border-rose-500/40 text-rose-600 dark:text-rose-400"
                   >
-                    REVERT
+                    {t("cip.revertBadge")}
                   </Badge>
                 </div>
                 <p className="font-mono text-[11px] mt-2 text-muted-foreground">
@@ -1746,7 +1774,7 @@ function SoulboundTestTab({
       </PanelCard>
 
       <PanelCard
-        title="CDSSBT.soulTransfer — only callable by CIP"
+        title={`CDSSBT.soulTransfer — ${lang === "zh" ? "仅可由 CIP 调用" : "only callable by CIP"}`}
         icon={ShieldCheck}
       >
         <div className="space-y-4">
@@ -1754,11 +1782,11 @@ function SoulboundTestTab({
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
               <div className="space-y-2">
                 <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground text-center">
-                  Current Owner
+                  {t("cip.currentOwnerLabel")}
                 </div>
                 <AvatarPill
                   avatar={selectedToken.ownerAvatar}
-                  label="current"
+                  label={t("cip.currentPillLabel")}
                   accent="violet"
                 />
               </div>
@@ -1779,7 +1807,7 @@ function SoulboundTestTab({
               </div>
               <div className="space-y-2">
                 <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground text-center">
-                  New Active Address
+                  {t("cip.newActiveAddr")}
                 </div>
                 <AvatarPill
                   avatar={
@@ -1787,14 +1815,14 @@ function SoulboundTestTab({
                       (a) => a.id !== selectedToken.ownerAvatarId && a.kind !== "agent",
                     ) ?? null
                   }
-                  label="reborn"
+                  label={t("cip.rebornPillLabel")}
                   accent="emerald"
                 />
               </div>
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground font-mono text-xs">
-              Select a CDS token on the left to demo the CIP soulTransfer path.
+              {t("cip.selectCdsTokenHint")}
             </div>
           )}
 
@@ -1821,7 +1849,7 @@ function SoulboundTestTab({
             ) : (
               <HeartPulse className="h-3.5 w-3.5" />
             )}
-            Trigger CIP Migration (soulTransfer)
+            {t("cip.triggerCipMigrationBtn")}
           </Button>
 
           <AnimatePresence>
@@ -1843,7 +1871,7 @@ function SoulboundTestTab({
                     <XCircle className="h-4 w-4 text-rose-500" />
                   )}
                   <span className="font-mono text-xs font-semibold">
-                    {cipMigrationSuccess.success ? "SOUL_TRANSFER_OK" : "FAILED"}
+                    {cipMigrationSuccess.success ? "SOUL_TRANSFER_OK" : t("cip.failedBadge")}
                   </span>
                   <Badge
                     variant="outline"
@@ -1853,7 +1881,7 @@ function SoulboundTestTab({
                         : "border-rose-500/40 text-rose-600 dark:text-rose-400"
                     }`}
                   >
-                    {cipMigrationSuccess.success ? "SUCCESS" : "ERROR"}
+                    {cipMigrationSuccess.success ? t("cip.successBadge") : t("cip.errorBadge")}
                   </Badge>
                 </div>
                 <p className="font-mono text-[11px] mt-2 text-muted-foreground">
@@ -1865,15 +1893,10 @@ function SoulboundTestTab({
 
           <div className="rounded-md border border-border/60 bg-card/30 p-2.5">
             <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-              Contract invariant
+              {t("cip.contractInvariantLabel")}
             </div>
             <p className="font-mono text-[11px] text-muted-foreground leading-relaxed">
-              CDS SBTs are <span className="text-foreground">polymorphic-soulbound</span>:
-              bound to <code>entityId</code>, not <code>address</code>. Manual
-              transfer ALWAYS reverts. Soul migration ALWAYS preserves{" "}
-              <code>tokenId</code> + <code>metadataHash</code> — only the owner
-              pointer rotates. The cognitive fingerprint — not the private key —
-              is the anchor of identity across death &amp; migration.
+              {t("cip.contractInvariantDesc")}
             </p>
           </div>
         </div>

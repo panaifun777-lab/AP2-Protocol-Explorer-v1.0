@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useT, useLang } from "@/lib/i18n";
 import {
   RFC_CONSTANTS,
   formatToken,
@@ -75,12 +76,16 @@ interface ListResponse {
 }
 
 // ----- Delay presets (RFC §5.1: T+30 / T+90 / T+180 / T+365) -----
-const DELAY_PRESETS: { label: string; days: number; seconds: number }[] = [
-  { label: "T+30 days", days: 30, seconds: 30 * 86400 },
-  { label: "T+90 days", days: 90, seconds: 90 * 86400 },
-  { label: "T+180 days", days: 180, seconds: 180 * 86400 },
-  { label: "T+365 days", days: 365, seconds: 365 * 86400 },
+const DELAY_PRESETS: { days: number; seconds: number }[] = [
+  { days: 30, seconds: 30 * 86400 },
+  { days: 90, seconds: 90 * 86400 },
+  { days: 180, seconds: 180 * 86400 },
+  { days: 365, seconds: 365 * 86400 },
 ];
+
+function delayLabel(days: number, lang: "zh" | "en"): string {
+  return lang === "zh" ? `T+${days} 天` : `T+${days} days`;
+}
 
 const PROPHET_NAME = "孤独先知 (XDP Originator)";
 
@@ -108,6 +113,8 @@ function parseApiResponse<T>(raw: unknown): T {
 // ============================================================
 export function TdpoPanel() {
   const { toast } = useToast();
+  const t = useT();
+  const lang = useLang((s) => s.lang);
 
   // ---- Server state ----
   const [data, setData] = React.useState<ListResponse | null>(null);
@@ -138,14 +145,14 @@ export function TdpoPanel() {
       }
     } catch (e) {
       toast({
-        title: "Failed to load TDPO state",
+        title: lang === "zh" ? "加载 TDPO 状态失败" : "Failed to load TDPO state",
         description: (e as Error).message,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [creatorId, toast]);
+  }, [creatorId, toast, lang]);
 
   React.useEffect(() => {
     void refresh();
@@ -158,24 +165,33 @@ export function TdpoPanel() {
   const onLock = React.useCallback(async () => {
     if (!creatorId) {
       toast({
-        title: "Creator required",
-        description: "Pick an avatar to lock a cognition for.",
+        title: lang === "zh" ? "需要创建者" : "Creator required",
+        description:
+          lang === "zh"
+            ? "请选择一个分身来锁定认知。"
+            : "Pick an avatar to lock a cognition for.",
         variant: "destructive",
       });
       return;
     }
     if (!cognitiveHash) {
       toast({
-        title: "Hash required",
-        description: "Generate or paste a cognitive hash first.",
+        title: lang === "zh" ? "需要哈希" : "Hash required",
+        description:
+          lang === "zh"
+            ? "请先生成或粘贴一个认知哈希。"
+            : "Generate or paste a cognitive hash first.",
         variant: "destructive",
       });
       return;
     }
     if (!contrarian) {
       toast({
-        title: "Not a contrarian cognition",
-        description: `Need variance > ${RFC_CONSTANTS.TDPO_VARIANCE_THRESHOLD} AND mean < ${RFC_CONSTANTS.TDPO_MEAN_THRESHOLD}.`,
+        title: lang === "zh" ? "不符合超前认知条件" : "Not a contrarian cognition",
+        description:
+          lang === "zh"
+            ? `需要方差 > ${RFC_CONSTANTS.TDPO_VARIANCE_THRESHOLD} 且 均值 < ${RFC_CONSTANTS.TDPO_MEAN_THRESHOLD}。`
+            : `Need variance > ${RFC_CONSTANTS.TDPO_VARIANCE_THRESHOLD} AND mean < ${RFC_CONSTANTS.TDPO_MEAN_THRESHOLD}.`,
         variant: "destructive",
       });
       return;
@@ -201,25 +217,25 @@ export function TdpoPanel() {
         json.data,
       );
       toast({
-        title: "Contrarian cognition locked",
-        description: `Hash ${parsed.lockResult.cognitiveHash.slice(
-          0,
-          10,
-        )}… · unlocks in ${DELAY_PRESETS[delayIdx].label}`,
+        title: lang === "zh" ? "超前认知已锁定" : "Contrarian cognition locked",
+        description:
+          lang === "zh"
+            ? `哈希 ${parsed.lockResult.cognitiveHash.slice(0, 10)}… · ${delayLabel(DELAY_PRESETS[delayIdx].days, lang)} 后解锁`
+            : `Hash ${parsed.lockResult.cognitiveHash.slice(0, 10)}… · unlocks in ${delayLabel(DELAY_PRESETS[delayIdx].days, lang)}`,
       });
       // Reset hash for next lock; keep creator + metrics for re-locking variants
       setCognitiveHash("");
       await refresh();
     } catch (e) {
       toast({
-        title: "Lock failed",
+        title: lang === "zh" ? "锁定失败" : "Lock failed",
         description: (e as Error).message,
         variant: "destructive",
       });
     } finally {
       setSubmitting(false);
     }
-  }, [contrarian, cognitiveHash, creatorId, delayIdx, mean, variance, toast, refresh]);
+  }, [contrarian, cognitiveHash, creatorId, delayIdx, mean, variance, toast, refresh, lang]);
 
   // ---- Advance time & claim ----
   const onAdvanceTime = React.useCallback(
@@ -245,12 +261,15 @@ export function TdpoPanel() {
         const parsed = parseApiResponse<TDPORetroactiveResult>(json.data);
         if (parsed.triggered) {
           toast({
-            title: "Prophet vindicated!",
-            description: `Reward ${formatToken(parsed.rewardAmount)} · rep +${parsed.reputationDelta} · factor ×${parsed.evolutionFactor}`,
+            title: lang === "zh" ? "先知已平反!" : "Prophet vindicated!",
+            description:
+              lang === "zh"
+                ? `奖励 ${formatToken(parsed.rewardAmount)} · 认知权重 +${parsed.reputationDelta} · 因子 ×${parsed.evolutionFactor}`
+                : `Reward ${formatToken(parsed.rewardAmount)} · rep +${parsed.reputationDelta} · factor ×${parsed.evolutionFactor}`,
           });
         } else {
           toast({
-            title: "Trigger conditions not met",
+            title: lang === "zh" ? "触发条件未满足" : "Trigger conditions not met",
             description: parsed.reason,
             variant: "destructive",
           });
@@ -259,14 +278,14 @@ export function TdpoPanel() {
         return parsed;
       } catch (e) {
         toast({
-          title: "Advance-time failed",
+          title: lang === "zh" ? "推进时间失败" : "Advance-time failed",
           description: (e as Error).message,
           variant: "destructive",
         });
         return null;
       }
     },
-    [toast, refresh],
+    [toast, refresh, lang],
   );
 
   // ---- Inject mediocrity tax ----
@@ -284,13 +303,16 @@ export function TdpoPanel() {
           throw new Error(json.error ?? "inject-tax failed");
         }
         toast({
-          title: "Mediocrity tax injected",
-          description: `+${amountUsdc.toLocaleString()} $AFC into the contrarian reward pool.`,
+          title: lang === "zh" ? "平庸税已注入" : "Mediocrity tax injected",
+          description:
+            lang === "zh"
+              ? `+${amountUsdc.toLocaleString()} $AFC 已注入超前认知奖励池。`
+              : `+${amountUsdc.toLocaleString()} $AFC into the contrarian reward pool.`,
         });
         await refresh();
       } catch (e) {
         toast({
-          title: "Tax injection failed",
+          title: lang === "zh" ? "税款注入失败" : "Tax injection failed",
           description: (e as Error).message,
           variant: "destructive",
         });
@@ -298,7 +320,7 @@ export function TdpoPanel() {
         setInjectingTax(false);
       }
     },
-    [toast, refresh],
+    [toast, refresh, lang],
   );
 
   // ---- Preset: XDP Prophet scenario ----
@@ -310,11 +332,13 @@ export function TdpoPanel() {
     setDelayIdx(2); // T+180
     if (!cognitiveHash) setCognitiveHash(mintHash());
     toast({
-      title: "XDP Prophet scenario loaded",
+      title: lang === "zh" ? "XDP 先知场景已加载" : "XDP Prophet scenario loaded",
       description:
-        "mean=15 · variance=850 · T+180d. Lock now, then on advance use futureMean=950, citations=5000 → factor ×63.",
+        lang === "zh"
+          ? "均值=15 · 方差=850 · T+180天。立即锁定,然后推进时使用 futureMean=950, citations=5000 → 因子 ×63。"
+          : "mean=15 · variance=850 · T+180d. Lock now, then on advance use futureMean=950, citations=5000 → factor ×63.",
     });
-  }, [data, cognitiveHash, toast]);
+  }, [data, cognitiveHash, toast, lang]);
 
   // ---- Derived stats ----
   const totalLocked = data?.stats.totalLocked ?? 0;
@@ -326,9 +350,9 @@ export function TdpoPanel() {
     <div>
       <PanelHeader
         icon={Clock}
-        title="TDPO Time-Delayed Pricing"
+        title={t("tdpo.title")}
         rfcSection="RFC §5.1 (TDPO)"
-        description="CognitiveTimeLock · retroactive compensation · mediocrity tax pool — protecting lonely prophets from mediocrity tyranny."
+        description={t("tdpo.description")}
         accent="amber"
         actions={
           <Button
@@ -339,7 +363,7 @@ export function TdpoPanel() {
             disabled={loading}
           >
             <RefreshCw className={loading ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
-            Refresh
+            {t("header.refresh")}
           </Button>
         }
       />
@@ -347,27 +371,27 @@ export function TdpoPanel() {
       {/* ===== Top stats ===== */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Stat
-          label="Locked Cognitions"
+          label={t("tdpo.lockedCognitions")}
           value={totalLocked}
-          hint="contrarian assets"
+          hint={t("tdpo.hintContrarianAssets")}
           accent="amber"
         />
         <Stat
-          label="Vindicated Prophets"
+          label={t("tdpo.vindicatedProphets")}
           value={triggered}
-          hint="retroactive triggers"
+          hint={t("tdpo.hintRetroactiveTriggers")}
           accent="emerald"
         />
         <Stat
-          label="Mediocrity Pool"
+          label={t("tdpo.poolBalance")}
           value={formatToken(poolCollected)}
           hint="contrarianRewardPool"
           accent="violet"
         />
         <Stat
-          label="Total Distributed"
+          label={t("tdpo.totalDistributed")}
           value={formatToken(poolDistributed)}
-          hint="paid to prophets"
+          hint={t("tdpo.hintPaidToProphets")}
           accent="cyan"
         />
       </div>
@@ -381,7 +405,7 @@ export function TdpoPanel() {
           transition={{ duration: 0.2 }}
         >
           <PanelCard
-            title="Lock Contrarian Cognition"
+            title={t("tdpo.lockContrarian")}
             icon={Lock}
             action={
               <Button
@@ -391,7 +415,7 @@ export function TdpoPanel() {
                 onClick={onRunProphetPreset}
               >
                 <Wand2 className="h-3.5 w-3.5" />
-                Run XDP Prophet Scenario
+                {t("tdpo.runXdpScenario")}
               </Button>
             }
           >
@@ -399,11 +423,11 @@ export function TdpoPanel() {
               {/* Creator select */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-mono text-muted-foreground">
-                  Creator Avatar
+                  {t("tdpo.creatorAvatar")}
                 </Label>
                 <Select value={creatorId} onValueChange={setCreatorId}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select creator avatar" />
+                    <SelectValue placeholder={t("tdpo.selectCreatorAvatar")} />
                   </SelectTrigger>
                   <SelectContent>
                     {data?.avatars.map((a) => (
@@ -421,7 +445,7 @@ export function TdpoPanel() {
               {/* Cognitive hash + auto-gen */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-mono text-muted-foreground">
-                  Cognitive Hash (bytes32)
+                  {t("tdpo.cognitiveHash")} (bytes32)
                 </Label>
                 <div className="flex gap-2">
                   <Input
@@ -437,7 +461,7 @@ export function TdpoPanel() {
                     onClick={() => setCognitiveHash(mintHash())}
                   >
                     <Sparkles className="h-3.5 w-3.5" />
-                    Generate
+                    {t("tdpo.generate")}
                   </Button>
                 </div>
               </div>
@@ -446,7 +470,7 @@ export function TdpoPanel() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-mono text-muted-foreground">
-                    Initial Mean (low = misunderstood)
+                    {t("tdpo.initialMean")}
                   </Label>
                   <Badge
                     variant="outline"
@@ -472,7 +496,7 @@ export function TdpoPanel() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-mono text-muted-foreground">
-                    Initial Variance (high = contested)
+                    {t("tdpo.initialVariance")}
                   </Label>
                   <Badge
                     variant="outline"
@@ -497,7 +521,7 @@ export function TdpoPanel() {
               {/* Delay select */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-mono text-muted-foreground">
-                  Time-Delay Window
+                  {t("tdpo.delayWindow")}
                 </Label>
                 <Select
                   value={String(delayIdx)}
@@ -508,8 +532,8 @@ export function TdpoPanel() {
                   </SelectTrigger>
                   <SelectContent>
                     {DELAY_PRESETS.map((p, i) => (
-                      <SelectItem key={p.label} value={String(i)}>
-                        <span className="font-mono text-xs">{p.label}</span>
+                      <SelectItem key={p.days} value={String(i)}>
+                        <span className="font-mono text-xs">{delayLabel(p.days, lang)}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -534,20 +558,22 @@ export function TdpoPanel() {
                 <div className="text-xs font-mono leading-snug">
                   {contrarian ? (
                     <span className="text-emerald-700 dark:text-emerald-300">
-                      Contrarian cognition — eligible for time-delayed lock.
+                      {t("tdpo.eligibleForLock")}
                       <br />
                       <span className="text-muted-foreground">
-                        variance ({variance}) &gt; {RFC_CONSTANTS.TDPO_VARIANCE_THRESHOLD} AND mean
-                        ({mean}) &lt; {RFC_CONSTANTS.TDPO_MEAN_THRESHOLD}
+                        {lang === "zh"
+                          ? `方差 (${variance}) > ${RFC_CONSTANTS.TDPO_VARIANCE_THRESHOLD} 且 均值 (${mean}) < ${RFC_CONSTANTS.TDPO_MEAN_THRESHOLD}`
+                          : `variance (${variance}) > ${RFC_CONSTANTS.TDPO_VARIANCE_THRESHOLD} AND mean (${mean}) < ${RFC_CONSTANTS.TDPO_MEAN_THRESHOLD}`}
                       </span>
                     </span>
                   ) : (
                     <span className="text-rose-700 dark:text-rose-300">
-                      Not a contrarian cognition. RFC §5.1 requires:
+                      {t("tdpo.notContrarianDetail")}
                       <br />
                       <span className="text-muted-foreground">
-                        variance &gt; {RFC_CONSTANTS.TDPO_VARIANCE_THRESHOLD} (current {variance}) AND
-                        mean &lt; {RFC_CONSTANTS.TDPO_MEAN_THRESHOLD} (current {mean})
+                        {lang === "zh"
+                          ? `方差 > ${RFC_CONSTANTS.TDPO_VARIANCE_THRESHOLD} (当前 ${variance}) 且 均值 < ${RFC_CONSTANTS.TDPO_MEAN_THRESHOLD} (当前 ${mean})`
+                          : `variance > ${RFC_CONSTANTS.TDPO_VARIANCE_THRESHOLD} (current ${variance}) AND mean < ${RFC_CONSTANTS.TDPO_MEAN_THRESHOLD} (current ${mean})`}
                       </span>
                     </span>
                   )}
@@ -561,7 +587,7 @@ export function TdpoPanel() {
                 onClick={() => void onLock()}
               >
                 <Lock className="h-4 w-4" />
-                {submitting ? "Locking…" : "Lock Cognition"}
+                {submitting ? t("tdpo.locking") : t("tdpo.lockBtn")}
               </Button>
             </div>
           </PanelCard>
@@ -574,19 +600,20 @@ export function TdpoPanel() {
           transition={{ duration: 0.2, delay: 0.05 }}
         >
           <PanelCard
-            title="Active Cognitive Assets"
+            title={t("tdpo.activeAssets")}
             icon={Hourglass}
             action={
               <Badge variant="outline" className="font-mono text-[10px]">
-                {data?.assets.length ?? 0} asset(s)
+                {lang === "zh"
+                  ? `${data?.assets.length ?? 0} 个资产`
+                  : `${data?.assets.length ?? 0} asset(s)`}
               </Badge>
             }
           >
             <div className="max-h-[640px] overflow-y-auto scrollbar-cyber pr-1 space-y-3">
               {!data || data.assets.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border/60 p-8 text-center text-muted-foreground font-mono text-xs">
-                  No cognitive assets locked yet. Use the form on the left to
-                  lock your first contrarian cognition.
+                  {t("tdpo.noAssets")}
                 </div>
               ) : (
                 data.assets.map((asset) => (
@@ -608,29 +635,29 @@ export function TdpoPanel() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, delay: 0.1 }}
       >
-        <PanelCard title="Mediocrity Tax Pool" icon={Coins}>
+        <PanelCard title={t("tdpo.mediocrityPool")} icon={Coins}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <div className="space-y-1">
               <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                Pool Balance (contrarianRewardPool)
+                {t("tdpo.poolBalanceLabel")} (contrarianRewardPool)
               </div>
               <div className="font-mono text-2xl font-bold text-amber-600 dark:text-amber-400">
                 {formatToken(poolCollected)}
               </div>
               <div className="text-[10px] text-muted-foreground">
-                RFC line 446-449 · 0.1% tax on high-freq low-cognition micro-payments
+                RFC line 446-449 · {t("tdpo.taxHint")}
               </div>
             </div>
 
             <div className="space-y-1">
               <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                Total Distributed
+                {t("tdpo.totalDistributed")}
               </div>
               <div className="font-mono text-2xl font-bold text-cyan-600 dark:text-cyan-400">
                 {formatToken(poolDistributed)}
               </div>
               <div className="text-[10px] text-muted-foreground">
-                Cumulative retroactive compensation paid to vindicated prophets
+                {t("tdpo.distributedHint")}
               </div>
             </div>
 
@@ -643,7 +670,7 @@ export function TdpoPanel() {
                 onClick={() => void onInjectTax(100)}
               >
                 <Zap className="h-3.5 w-3.5" />
-                Inject Tax (+100 $AFC)
+                {t("tdpo.injectTaxBtn")} (+100 $AFC)
               </Button>
               <Button
                 variant="outline"
@@ -653,7 +680,7 @@ export function TdpoPanel() {
                 onClick={() => void onInjectTax(1000)}
               >
                 <Zap className="h-3.5 w-3.5" />
-                Inject Tax (+1,000 $AFC)
+                {t("tdpo.injectTaxBtn")} (+1,000 $AFC)
               </Button>
             </div>
           </div>
@@ -676,6 +703,8 @@ interface AssetCardProps {
 }
 
 function AssetCard({ asset, onAdvance }: AssetCardProps) {
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   const now = Date.now();
   const lockMs = new Date(asset.lockTimestamp).getTime();
   const unlockMs = new Date(asset.unlockTimestamp).getTime();
@@ -741,24 +770,28 @@ function AssetCard({ asset, onAdvance }: AssetCardProps) {
               {asset.creatorAvatar.name}
             </span>
             <Badge variant="secondary" className="font-mono text-[9px]">
-              mean={asset.initialMean}
+              {lang === "zh" ? "均值" : "mean"}={asset.initialMean}
             </Badge>
             <Badge variant="secondary" className="font-mono text-[9px]">
-              var={asset.initialVariance}
+              {lang === "zh" ? "方差" : "var"}={asset.initialVariance}
             </Badge>
           </div>
 
           {/* Row 3: timeline progress */}
           <div className="space-y-1">
             <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
-              <span>Lock: {new Date(asset.lockTimestamp).toLocaleDateString()}</span>
-              <span>Unlock: {new Date(asset.unlockTimestamp).toLocaleDateString()}</span>
+              <span>{t("tdpo.lockShort")}: {new Date(asset.lockTimestamp).toLocaleDateString()}</span>
+              <span>{t("tdpo.unlockShort")}: {new Date(asset.unlockTimestamp).toLocaleDateString()}</span>
             </div>
             <Progress value={progressPct} className="h-1.5" />
             <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
-              <span>{progressPct}% elapsed</span>
+              <span>{progressPct}% {t("common.elapsed")}</span>
               <span>
-                {isUnlocked ? "window open" : `${Math.ceil((unlockMs - now) / 86400000)}d left`}
+                {isUnlocked
+                  ? t("tdpo.windowOpen")
+                  : lang === "zh"
+                    ? `${Math.ceil((unlockMs - now) / 86400000)}天剩余`
+                    : `${Math.ceil((unlockMs - now) / 86400000)}d left`}
               </span>
             </div>
           </div>
@@ -771,9 +804,11 @@ function AssetCard({ asset, onAdvance }: AssetCardProps) {
                 Vindicated — factor ×{asset.evolutionFactor}
               </div>
               <div className="mt-1 text-muted-foreground">
-                Reward: <span className="text-foreground">{formatToken(asset.rewardAmount)}</span>
+                {t("tdpo.reward")}: <span className="text-foreground">{formatToken(asset.rewardAmount)}</span>
                 <br />
-                Future mean={asset.futureMean} · citations={asset.futureCitations}
+                {lang === "zh"
+                  ? `未来均值=${asset.futureMean} · 引用数=${asset.futureCitations}`
+                  : `Future mean=${asset.futureMean} · citations=${asset.futureCitations}`}
               </div>
             </div>
           )}
@@ -783,12 +818,12 @@ function AssetCard({ asset, onAdvance }: AssetCardProps) {
             <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2 space-y-2">
               <div className="flex items-center gap-1.5 text-[11px] font-mono text-amber-700 dark:text-amber-300">
                 <Hourglass className="h-3.5 w-3.5" />
-                Time-lock expired — advance reality & claim
+                {t("tdpo.timeLockExpired")}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-[10px] font-mono text-muted-foreground">
-                    Future Mean
+                    {t("tdpo.futureMean")}
                   </Label>
                   <Input
                     type="number"
@@ -800,7 +835,7 @@ function AssetCard({ asset, onAdvance }: AssetCardProps) {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[10px] font-mono text-muted-foreground">
-                    Future Citations
+                    {t("tdpo.futureCitations")}
                   </Label>
                   <Input
                     type="number"
@@ -813,11 +848,11 @@ function AssetCard({ asset, onAdvance }: AssetCardProps) {
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[10px] font-mono text-muted-foreground">
-                  Projected factor ×{projectedFactor} ·{" "}
+                  {t("tdpo.projectedFactor")} ×{projectedFactor} ·{" "}
                   {willTrigger ? (
-                    <span className="text-emerald-600 dark:text-emerald-400">will trigger</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">{t("tdpo.willTrigger")}</span>
                   ) : (
-                    <span className="text-rose-600 dark:text-rose-400">won&apos;t trigger</span>
+                    <span className="text-rose-600 dark:text-rose-400">{t("tdpo.wontTrigger")}</span>
                   )}
                 </span>
                 <Button
@@ -831,7 +866,7 @@ function AssetCard({ asset, onAdvance }: AssetCardProps) {
                   ) : (
                     <Trophy className="h-3.5 w-3.5" />
                   )}
-                  {advancing ? "Claiming…" : "Advance & Claim"}
+                  {advancing ? t("tdpo.claiming") : t("tdpo.advanceClaimBtn")}
                 </Button>
               </div>
             </div>
@@ -841,7 +876,9 @@ function AssetCard({ asset, onAdvance }: AssetCardProps) {
           {!isUnlocked && !isTriggered && (
             <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
               <Ban className="h-3 w-3" />
-              Time-lock active — advance-time form unlocks at T+{Math.ceil((unlockMs - lockMs) / 86400000)}d
+              {lang === "zh"
+                ? `时间锁激活中 — 推进时间表单将在 T+${Math.ceil((unlockMs - lockMs) / 86400000)}天 解锁`
+                : `Time-lock active — advance-time form unlocks at T+${Math.ceil((unlockMs - lockMs) / 86400000)}d`}
             </div>
           )}
         </CardContent>

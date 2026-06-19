@@ -29,6 +29,7 @@ export interface ModuleConfig {
   icon: LucideIcon;
   rfcSection: string;
   accent: string; // tailwind color name token
+  navKey: string; // translation key for nav label
 }
 
 export const MODULES: ModuleConfig[] = [
@@ -40,6 +41,7 @@ export const MODULES: ModuleConfig[] = [
     icon: Layers,
     rfcSection: "RFC §4",
     accent: "emerald",
+    navKey: "nav.overview",
   },
   {
     id: "escrow",
@@ -50,6 +52,7 @@ export const MODULES: ModuleConfig[] = [
     icon: Lock,
     rfcSection: "RFC §1 / §5.1",
     accent: "emerald",
+    navKey: "nav.escrow",
   },
   {
     id: "tdpo",
@@ -60,6 +63,7 @@ export const MODULES: ModuleConfig[] = [
     icon: Clock,
     rfcSection: "RFC §5.1 (TDPO)",
     accent: "amber",
+    navKey: "nav.tdpo",
   },
   {
     id: "cip",
@@ -70,6 +74,7 @@ export const MODULES: ModuleConfig[] = [
     icon: Heart,
     rfcSection: "RFC §5.2",
     accent: "violet",
+    navKey: "nav.cip",
   },
   {
     id: "dag",
@@ -80,6 +85,7 @@ export const MODULES: ModuleConfig[] = [
     icon: Network,
     rfcSection: "RFC §5.1 (CPDF)",
     accent: "cyan",
+    navKey: "nav.dag",
   },
   {
     id: "pcmg",
@@ -90,6 +96,7 @@ export const MODULES: ModuleConfig[] = [
     icon: Crosshair,
     rfcSection: "RFC §5.3",
     accent: "rose",
+    navKey: "nav.pcmg",
   },
   {
     id: "rfc",
@@ -99,6 +106,7 @@ export const MODULES: ModuleConfig[] = [
     icon: FileText,
     rfcSection: "RFC Full",
     accent: "emerald",
+    navKey: "nav.rfc",
   },
   {
     id: "tests",
@@ -108,6 +116,7 @@ export const MODULES: ModuleConfig[] = [
     icon: FlaskConical,
     rfcSection: "RFC §三 / §4.2",
     accent: "cyan",
+    navKey: "nav.tests",
   },
 ];
 

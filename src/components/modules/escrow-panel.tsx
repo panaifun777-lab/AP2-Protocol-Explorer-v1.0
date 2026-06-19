@@ -39,6 +39,7 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useT, useLang } from "@/lib/i18n";
 import {
   formatToken,
   fromTokenUnits,
@@ -154,6 +155,8 @@ function shortHash(s: string, len = 10): string {
 
 export function EscrowPanel() {
   const { toast } = useToast();
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   const [avatars, setAvatars] = React.useState<AvatarWithFence[]>([]);
   const [escrows, setEscrows] = React.useState<EscrowRow[]>([]);
   const [loadingAvatars, setLoadingAvatars] = React.useState(false);
@@ -207,21 +210,21 @@ export function EscrowPanel() {
         }
       } else {
         toast({
-          title: "Failed to load avatars",
+          title: lang === "zh" ? "加载分身失败" : "Failed to load avatars",
           description: json.error,
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
     } finally {
       setLoadingAvatars(false);
     }
-  }, [selectedFenceAvatarId, payerAddress, payeeAddress, toast]);
+  }, [selectedFenceAvatarId, payerAddress, payeeAddress, toast, lang]);
 
   const fetchEscrows = React.useCallback(async () => {
     setLoadingEscrows(true);
@@ -237,21 +240,21 @@ export function EscrowPanel() {
         }
       } else {
         toast({
-          title: "Failed to load escrows",
+          title: lang === "zh" ? "加载托管失败" : "Failed to load escrows",
           description: json.error,
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
     } finally {
       setLoadingEscrows(false);
     }
-  }, [selectedEscrowId, toast]);
+  }, [selectedEscrowId, toast, lang]);
 
   React.useEffect(() => {
     void fetchAvatars();
@@ -272,16 +275,22 @@ export function EscrowPanel() {
   const createEscrow = React.useCallback(async () => {
     if (!payerAddress || !payeeAddress) {
       toast({
-        title: "Missing fields",
-        description: "Payer and payee are required.",
+        title: lang === "zh" ? "字段缺失" : "Missing fields",
+        description:
+          lang === "zh"
+            ? "付款方和收款方为必填项。"
+            : "Payer and payee are required.",
         variant: "destructive",
       });
       return;
     }
     if (payerAddress === payeeAddress) {
       toast({
-        title: "Invalid escrow",
-        description: "Payer and payee must differ.",
+        title: lang === "zh" ? "无效托管" : "Invalid escrow",
+        description:
+          lang === "zh"
+            ? "付款方和收款方不能相同。"
+            : "Payer and payee must differ.",
         variant: "destructive",
       });
       return;
@@ -306,8 +315,11 @@ export function EscrowPanel() {
       const json = await res.json();
       if (json.ok) {
         toast({
-          title: "Funds locked",
-          description: `Escrow ${taskId.slice(0, 18)}… created with status Streaming`,
+          title: lang === "zh" ? "资金已锁定" : "Funds locked",
+          description:
+            lang === "zh"
+              ? `托管 ${taskId.slice(0, 18)}… 已创建,状态为 Streaming`
+              : `Escrow ${taskId.slice(0, 18)}… created with status Streaming`,
         });
         await Promise.all([fetchAvatars(), fetchEscrows()]);
         setSelectedEscrowId(taskId);
@@ -315,14 +327,17 @@ export function EscrowPanel() {
         const checkStatus =
           json.data?.check?.status ?? (json.ok === false ? "REJECT" : "ERROR");
         toast({
-          title: `Lock rejected · ${checkStatus}`,
+          title:
+            lang === "zh"
+              ? `锁定被拒绝 · ${checkStatus}`
+              : `Lock rejected · ${checkStatus}`,
           description: json.error,
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -338,6 +353,7 @@ export function EscrowPanel() {
     toast,
     fetchAvatars,
     fetchEscrows,
+    lang,
   ]);
 
   // ---------------- Stream release ----------------
@@ -365,22 +381,27 @@ export function EscrowPanel() {
             };
           }>(json.data);
           toast({
-            title: "Stream released",
-            description: `+${formatToken(
-              r.result.releasedAmount,
-            )} → total ${formatToken(r.result.totalReleased)} · ${r.result.status}`,
+            title: lang === "zh" ? "流式释放成功" : "Stream released",
+            description:
+              lang === "zh"
+                ? `+${formatToken(
+                    r.result.releasedAmount,
+                  )} → 总计 ${formatToken(r.result.totalReleased)} · ${r.result.status}`
+                : `+${formatToken(
+                    r.result.releasedAmount,
+                  )} → total ${formatToken(r.result.totalReleased)} · ${r.result.status}`,
           });
           await fetchEscrows();
         } else {
           toast({
-            title: "Stream release rejected",
+            title: lang === "zh" ? "流式释放被拒绝" : "Stream release rejected",
             description: json.error,
             variant: "destructive",
           });
         }
       } catch (e) {
         toast({
-          title: "Network error",
+          title: lang === "zh" ? "网络错误" : "Network error",
           description: (e as Error).message,
           variant: "destructive",
         });
@@ -388,7 +409,7 @@ export function EscrowPanel() {
         setStreaming(false);
       }
     },
-    [toast, fetchEscrows],
+    [toast, fetchEscrows, lang],
   );
 
   // ---------------- Verify & settle ----------------
@@ -422,33 +443,48 @@ export function EscrowPanel() {
           }>(json.data);
           if (r.result.status === "Disputed") {
             toast({
-              title: `Dispute triggered · clawback ${formatToken(
-                r.result.clawbackRequired,
-              )}`,
-              description: `Streaming over-paid vs MCP ${verifyPct}% completion. NO transfer (RFC §1 verifyAndSettle).`,
+              title:
+                lang === "zh"
+                  ? `争议已触发 · 回拨 ${formatToken(
+                      r.result.clawbackRequired,
+                    )}`
+                  : `Dispute triggered · clawback ${formatToken(
+                      r.result.clawbackRequired,
+                    )}`,
+              description:
+                lang === "zh"
+                  ? `流式超额支付 vs MCP ${verifyPct}% 完成度。不转账 (RFC §1 verifyAndSettle)。`
+                  : `Streaming over-paid vs MCP ${verifyPct}% completion. NO transfer (RFC §1 verifyAndSettle).`,
               variant: "destructive",
             });
           } else {
             toast({
-              title: "Settled · Completed",
-              description: `finalPayout ${formatToken(
-                r.result.finalPayout,
-              )} · refund ${formatToken(
-                r.result.refundAmount,
-              )} · payee rep ${r.payeeRepBefore} → ${r.payeeRepAfter} (+${r.result.reputationDelta})`,
+              title: lang === "zh" ? "已结算 · Completed" : "Settled · Completed",
+              description:
+                lang === "zh"
+                  ? `finalPayout ${formatToken(
+                      r.result.finalPayout,
+                    )} · 退款 ${formatToken(
+                      r.result.refundAmount,
+                    )} · 收款方声誉 ${r.payeeRepBefore} → ${r.payeeRepAfter} (+${r.result.reputationDelta})`
+                  : `finalPayout ${formatToken(
+                      r.result.finalPayout,
+                    )} · refund ${formatToken(
+                      r.result.refundAmount,
+                    )} · payee rep ${r.payeeRepBefore} → ${r.payeeRepAfter} (+${r.result.reputationDelta})`,
             });
           }
           await Promise.all([fetchEscrows(), fetchAvatars()]);
         } else {
           toast({
-            title: "Settle rejected",
+            title: lang === "zh" ? "结算被拒绝" : "Settle rejected",
             description: json.error,
             variant: "destructive",
           });
         }
       } catch (e) {
         toast({
-          title: "Network error",
+          title: lang === "zh" ? "网络错误" : "Network error",
           description: (e as Error).message,
           variant: "destructive",
         });
@@ -456,7 +492,7 @@ export function EscrowPanel() {
         setSettling(false);
       }
     },
-    [verifyPct, qualityScore, toast, fetchEscrows, fetchAvatars],
+    [verifyPct, qualityScore, toast, fetchEscrows, fetchAvatars, lang],
   );
 
   // ---------------- Test: Scope_Lock_Violation ----------------
@@ -472,8 +508,11 @@ export function EscrowPanel() {
 
     if (!lawyer) {
       toast({
-        title: "Test setup failed",
-        description: "No suitable avatar found for the scope-violation test.",
+        title: lang === "zh" ? "测试初始化失败" : "Test setup failed",
+        description:
+          lang === "zh"
+            ? "未找到适合作用域违规测试的分身。"
+            : "No suitable avatar found for the scope-violation test.",
         variant: "destructive",
       });
       return;
@@ -505,21 +544,28 @@ export function EscrowPanel() {
 
       toast({
         title: passed
-          ? `✓ Test Vector 1 PASS · REJECT_SCOPE`
-          : `✗ Test Vector 1 FAIL · ${status}`,
-        description: `target=${lawyer.avatar.name} scope=medical_diagnosis · triggeredDecayingAuth=${triggeredDecayingAuth} · ${json.error ?? "approved unexpectedly"}`,
+          ? lang === "zh"
+            ? `✓ 测试向量 1 通过 · REJECT_SCOPE`
+            : `✓ Test Vector 1 PASS · REJECT_SCOPE`
+          : lang === "zh"
+            ? `✗ 测试向量 1 失败 · ${status}`
+            : `✗ Test Vector 1 FAIL · ${status}`,
+        description:
+          lang === "zh"
+            ? `目标=${lawyer.avatar.name} scope=medical_diagnosis · triggeredDecayingAuth=${triggeredDecayingAuth} · ${json.error ?? "意外通过"}`
+            : `target=${lawyer.avatar.name} scope=medical_diagnosis · triggeredDecayingAuth=${triggeredDecayingAuth} · ${json.error ?? "approved unexpectedly"}`,
         variant: passed ? "default" : "destructive",
       });
       // Refresh fence (dailySpent unchanged since rejected).
       await fetchAvatars();
     } catch (e) {
       toast({
-        title: "Test runner error",
+        title: lang === "zh" ? "测试运行器错误" : "Test runner error",
         description: (e as Error).message,
         variant: "destructive",
       });
     }
-  }, [avatars, toast, fetchAvatars]);
+  }, [avatars, toast, fetchAvatars, lang]);
 
   // ---------------- Test: Scope Violation (demo button) ----------------
   // Quick demo: try scope="medical" on the currently-selected fence avatar
@@ -528,8 +574,11 @@ export function EscrowPanel() {
     const target = avatars.find((a) => a.avatar.id === selectedFenceAvatarId);
     if (!target || !target.fence) {
       toast({
-        title: "No avatar selected",
-        description: "Pick an avatar in the BudgetFence Inspector first.",
+        title: lang === "zh" ? "未选择分身" : "No avatar selected",
+        description:
+          lang === "zh"
+            ? "请先在 BudgetFence 检查器中选择一个分身。"
+            : "Pick an avatar in the BudgetFence Inspector first.",
         variant: "destructive",
       });
       return;
@@ -538,8 +587,11 @@ export function EscrowPanel() {
     const violates = !target.fence.allowedScopes.includes(testScope);
     if (!violates) {
       toast({
-        title: "Avatar allows 'medical'",
-        description: `${target.avatar.name} already permits scope=medical; pick a non-medical avatar to demo the violation.`,
+        title: lang === "zh" ? "分身已允许 'medical'" : "Avatar allows 'medical'",
+        description:
+          lang === "zh"
+            ? `${target.avatar.name} 已允许 scope=medical;请选择非医疗分身以演示违规。`
+            : `${target.avatar.name} already permits scope=medical; pick a non-medical avatar to demo the violation.`,
         variant: "destructive",
       });
       return;
@@ -564,18 +616,23 @@ export function EscrowPanel() {
       const json = await res.json();
       const status = json.data?.check?.status ?? "UNKNOWN";
       toast({
-        title: status === "REJECT_SCOPE" ? "✓ REJECT_SCOPE" : `Unexpected: ${status}`,
-        description: json.error ?? "approved",
+        title:
+          status === "REJECT_SCOPE"
+            ? "✓ REJECT_SCOPE"
+            : lang === "zh"
+              ? `意外: ${status}`
+              : `Unexpected: ${status}`,
+        description: json.error ?? (lang === "zh" ? "已通过" : "approved"),
         variant: status === "REJECT_SCOPE" ? "default" : "destructive",
       });
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
     }
-  }, [avatars, selectedFenceAvatarId, toast]);
+  }, [avatars, selectedFenceAvatarId, toast, lang]);
 
   // ---------------- Derived ----------------
   const selectedEscrow = React.useMemo(
@@ -608,9 +665,9 @@ export function EscrowPanel() {
     <div>
       <PanelHeader
         icon={Lock}
-        title="AP2Escrow + BudgetFence"
+        title={t("escrow.title")}
         rfcSection="RFC §1 / §5.1"
-        description="Streaming payment · Scope Lock · Decaying Auth · MCP verify-and-settle (with clawback path)"
+        description={t("escrow.description")}
         accent="emerald"
         actions={
           <Button
@@ -623,7 +680,7 @@ export function EscrowPanel() {
             }}
           >
             <Activity className="h-3.5 w-3.5" />
-            Refresh
+            {t("header.refresh")}
           </Button>
         }
       />
@@ -631,27 +688,27 @@ export function EscrowPanel() {
       {/* ===================== STATS ===================== */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Stat
-          label="Total Escrows"
+          label={t("escrow.totalEscrows")}
           value={stats.total}
-          hint="all escrow records"
+          hint={t("escrow.hintTotal")}
           accent="emerald"
         />
         <Stat
-          label="Streaming"
+          label={t("escrow.streamingCount")}
           value={stats.streaming}
-          hint="active streaming-release"
+          hint={t("escrow.hintStreaming")}
           accent="cyan"
         />
         <Stat
-          label="Completed"
+          label={t("escrow.completedCount")}
           value={stats.completed}
-          hint="verifyAndSettle success"
+          hint={t("escrow.hintCompleted")}
           accent="violet"
         />
         <Stat
-          label="Disputed"
+          label={t("escrow.disputedCount")}
           value={stats.disputed}
-          hint="clawback triggered"
+          hint={t("escrow.hintDisputed")}
           accent="rose"
         />
       </div>
@@ -661,15 +718,15 @@ export function EscrowPanel() {
         {/* ----------- LEFT 60% ----------- */}
         <div className="lg:col-span-3 space-y-4">
           {/* Create Escrow form */}
-          <PanelCard title="Create Escrow · lockFunds()" icon={Lock}>
+          <PanelCard title={`${t("escrow.createEscrow")} · lockFunds()`} icon={Lock}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  Payer (avatar with BudgetFence)
+                  {t("escrow.payerWithFence")}
                 </label>
                 <Select value={payerAddress} onValueChange={setPayerAddress}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select payer" />
+                    <SelectValue placeholder={t("escrow.selectPayer")} />
                   </SelectTrigger>
                   <SelectContent>
                     {avatars
@@ -688,11 +745,11 @@ export function EscrowPanel() {
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  Payee
+                  {t("escrow.payee")}
                 </label>
                 <Select value={payeeAddress} onValueChange={setPayeeAddress}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select payee" />
+                    <SelectValue placeholder={t("escrow.selectPayee")} />
                   </SelectTrigger>
                   <SelectContent>
                     {avatars.map((a) => (
@@ -709,7 +766,7 @@ export function EscrowPanel() {
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  Amount (USDC)
+                  {t("escrow.amountUsdc")}
                 </label>
                 <Input
                   type="number"
@@ -723,11 +780,11 @@ export function EscrowPanel() {
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  Scope
+                  {t("escrow.scopeLabel")}
                 </label>
                 <Select value={scope} onValueChange={setScope}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="scope" />
+                    <SelectValue placeholder={t("escrow.scopePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {SCOPE_OPTIONS.map((s) => (
@@ -741,7 +798,7 @@ export function EscrowPanel() {
 
               <div className="space-y-1.5 md:col-span-2">
                 <label className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  Duration (seconds)
+                  {t("escrow.durationSeconds")}
                 </label>
                 <Input
                   type="number"
@@ -760,7 +817,7 @@ export function EscrowPanel() {
                 className="font-mono text-xs gap-1"
               >
                 <Lock className="h-3.5 w-3.5" />
-                {creating ? "Locking…" : "Lock Funds"}
+                {creating ? t("escrow.locking") : t("escrow.lockFunds")}
               </Button>
               <Button
                 variant="outline"
@@ -768,20 +825,20 @@ export function EscrowPanel() {
                 className="font-mono text-xs gap-1 border-rose-500/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10"
               >
                 <FlaskConical className="h-3.5 w-3.5" />
-                Run Scope_Lock_Violation Test
+                {t("escrow.runScopeLockViolation")}
               </Button>
             </div>
             <p className="mt-2 text-[10px] text-muted-foreground font-mono leading-relaxed">
-              Test Vector 1 (RFC §三): attempts lockFunds with scope=
-              <span className="text-rose-500">medical_diagnosis</span> on the
-              lawyer avatar (allowedScopes=legal,compliance,research) → expects{" "}
+              {t("escrow.tv1DescPre")}
+              <span className="text-rose-500">medical_diagnosis</span>{" "}
+              {t("escrow.tv1DescMid")}{" "}
               <span className="text-rose-500">REJECT_SCOPE</span>.
             </p>
           </PanelCard>
 
           {/* Active Escrows table */}
           <PanelCard
-            title="Active Escrows · streamRelease / verifyAndSettle"
+            title={`${t("escrow.activeEscrows")} · streamRelease / verifyAndSettle`}
             icon={Droplet}
           >
             <div className="max-h-96 overflow-y-auto scrollbar-cyber rounded-md border border-border/40">
@@ -789,22 +846,22 @@ export function EscrowPanel() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="font-mono text-[10px]">
-                      Task / Pair
+                      {t("escrow.taskPair")}
                     </TableHead>
                     <TableHead className="font-mono text-[10px]">
-                      Amount
+                      {t("common.amount")}
                     </TableHead>
                     <TableHead className="font-mono text-[10px]">
-                      Released
+                      {t("common.released")}
                     </TableHead>
                     <TableHead className="font-mono text-[10px]">
-                      Scope
+                      {t("escrow.scopeLabel")}
                     </TableHead>
                     <TableHead className="font-mono text-[10px]">
-                      Status
+                      {t("common.status")}
                     </TableHead>
                     <TableHead className="font-mono text-[10px] text-right">
-                      Select
+                      {t("common.select")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -815,7 +872,7 @@ export function EscrowPanel() {
                         colSpan={6}
                         className="text-center text-[11px] text-muted-foreground font-mono py-8"
                       >
-                        No escrows yet — create one above.
+                        {t("escrow.noEscrowsYet")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -872,7 +929,9 @@ export function EscrowPanel() {
                           className="font-mono text-[10px] h-7"
                           onClick={() => setSelectedEscrowId(e.taskId)}
                         >
-                          {e.taskId === selectedEscrowId ? "Selected" : "Select"}
+                          {e.taskId === selectedEscrowId
+                            ? t("escrow.selected")
+                            : t("common.select")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -885,7 +944,7 @@ export function EscrowPanel() {
           {/* Selected Escrow Inspector + Actions */}
           {selectedEscrow && (
             <PanelCard
-              title={`Inspector · ${shortHash(selectedEscrow.taskId, 10)}`}
+              title={`${t("escrow.inspector")} · ${shortHash(selectedEscrow.taskId, 10)}`}
               icon={ArrowRightCircle}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -894,19 +953,19 @@ export function EscrowPanel() {
                   <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
                     <div>
                       <div className="text-[9px] text-muted-foreground uppercase">
-                        Payer
+                        {t("escrow.payer")}
                       </div>
                       <div>{selectedEscrow.payerName}</div>
                     </div>
                     <div>
                       <div className="text-[9px] text-muted-foreground uppercase">
-                        Payee
+                        {t("escrow.payee")}
                       </div>
                       <div>{selectedEscrow.payeeName}</div>
                     </div>
                     <div>
                       <div className="text-[9px] text-muted-foreground uppercase">
-                        Total Amount
+                        {t("escrow.totalAmount")}
                       </div>
                       <div className="text-emerald-600 dark:text-emerald-400">
                         {formatToken(selectedEscrow.totalAmount)}
@@ -914,7 +973,7 @@ export function EscrowPanel() {
                     </div>
                     <div>
                       <div className="text-[9px] text-muted-foreground uppercase">
-                        Released
+                        {t("common.released")}
                       </div>
                       <div className="text-cyan-600 dark:text-cyan-400">
                         {formatToken(selectedEscrow.releasedAmount)} (
@@ -927,7 +986,7 @@ export function EscrowPanel() {
                     </div>
                     <div>
                       <div className="text-[9px] text-muted-foreground uppercase">
-                        Start
+                        {t("escrow.startTime")}
                       </div>
                       <div className="text-[10px]">
                         {new Date(selectedEscrow.startTime as unknown as string).toLocaleTimeString()}
@@ -935,7 +994,7 @@ export function EscrowPanel() {
                     </div>
                     <div>
                       <div className="text-[9px] text-muted-foreground uppercase">
-                        End
+                        {t("escrow.endTime")}
                       </div>
                       <div className="text-[10px]">
                         {new Date(selectedEscrow.endTime as unknown as string).toLocaleTimeString()}
@@ -947,7 +1006,7 @@ export function EscrowPanel() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-[10px] font-mono">
                       <span className="text-muted-foreground">
-                        Time elapsed / total
+                        {t("escrow.timeElapsedTotal")}
                       </span>
                       <span className="text-cyan-600 dark:text-cyan-400">
                         {liveElapsedPct.toFixed(1)}%
@@ -963,7 +1022,7 @@ export function EscrowPanel() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-[10px] font-mono">
                       <span className="text-muted-foreground">
-                        Released / total
+                        {t("escrow.releasedTotal")}
                       </span>
                       <span className="text-emerald-600 dark:text-emerald-400">
                         {(
@@ -995,7 +1054,7 @@ export function EscrowPanel() {
                       diff = released − (total × pct / 100)
                     </div>
                     <div className="mt-1 text-rose-500">
-                      if diff &gt; 0 → Disputed, NO transfer (clawback)
+                      {t("escrow.formulaDisputed")}
                     </div>
                   </div>
                 </div>
@@ -1011,9 +1070,7 @@ export function EscrowPanel() {
                       </span>
                     </div>
                     <p className="text-[10px] text-muted-foreground font-mono leading-relaxed">
-                      Calls the streaming-release math. Mirrors Solidity
-                      streamRelease — releases accrued amount or remainder on
-                      end-time.
+                      {t("escrow.streamReleaseDesc")}
                     </p>
                     <Button
                       size="sm"
@@ -1024,7 +1081,7 @@ export function EscrowPanel() {
                       onClick={() => void streamRelease(selectedEscrow.taskId)}
                     >
                       <Play className="h-3.5 w-3.5" />
-                      {streaming ? "Releasing…" : "Stream Release"}
+                      {streaming ? t("escrow.releasing") : t("escrow.streamRelease")}
                     </Button>
                   </div>
 
@@ -1040,7 +1097,7 @@ export function EscrowPanel() {
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-[10px] font-mono">
                         <span className="text-muted-foreground">
-                          MCP completion %
+                          {t("escrow.mcpCompletion")}
                         </span>
                         <span className="text-violet-600 dark:text-violet-400">
                           {verifyPct}%
@@ -1058,7 +1115,7 @@ export function EscrowPanel() {
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-[10px] font-mono">
                         <span className="text-muted-foreground">
-                          Quality score
+                          {t("escrow.qualityScore")}
                         </span>
                         <span className="text-violet-600 dark:text-violet-400">
                           {qualityScore}
@@ -1074,7 +1131,7 @@ export function EscrowPanel() {
                     </div>
 
                     <div className="text-[10px] font-mono text-muted-foreground leading-relaxed">
-                      finalPayout = total × {verifyPct}% ={" "}
+                      {t("escrow.finalPayoutLabel")} = total × {verifyPct}% ={" "}
                       <span className="text-foreground">
                         {formatToken(
                           (selectedEscrow.totalAmount * BigInt(verifyPct)) /
@@ -1082,7 +1139,7 @@ export function EscrowPanel() {
                         )}
                       </span>
                       <br />
-                      already released ={" "}
+                      {t("escrow.alreadyReleasedLabel")}{" "}
                       <span className="text-foreground">
                         {formatToken(selectedEscrow.releasedAmount)}
                       </span>
@@ -1091,11 +1148,11 @@ export function EscrowPanel() {
                       (selectedEscrow.totalAmount * BigInt(verifyPct)) /
                         100n ? (
                         <span className="text-rose-500">
-                          ⚠ diff &gt; 0 → Disputed, clawback required
+                          {t("escrow.diffPositive")}
                         </span>
                       ) : (
                         <span className="text-emerald-500">
-                          ✓ diff ≤ 0 → Completed, refund remaining
+                          {t("escrow.diffNegative")}
                         </span>
                       )}
                     </div>
@@ -1115,7 +1172,7 @@ export function EscrowPanel() {
                       }
                     >
                       <ShieldCheck className="h-3.5 w-3.5" />
-                      {settling ? "Settling…" : "Verify & Settle"}
+                      {settling ? t("escrow.settling") : t("escrow.verifySettle")}
                     </Button>
                   </div>
                 </div>
@@ -1127,7 +1184,7 @@ export function EscrowPanel() {
         {/* ----------- RIGHT 40% ----------- */}
         <div className="lg:col-span-2 space-y-4">
           <PanelCard
-            title="BudgetFence Inspector"
+            title={t("escrow.budgetFence")}
             icon={ShieldAlert}
             action={
               <Select
@@ -1135,7 +1192,7 @@ export function EscrowPanel() {
                 onValueChange={setSelectedFenceAvatarId}
               >
                 <SelectTrigger className="h-7 w-44 text-[11px] font-mono">
-                  <SelectValue placeholder="Pick avatar" />
+                  <SelectValue placeholder={t("escrow.pickAvatar")} />
                 </SelectTrigger>
                 <SelectContent>
                   {avatars
@@ -1171,7 +1228,7 @@ export function EscrowPanel() {
                     {selectedFence.avatar.address}
                   </div>
                   <div className="font-mono text-[10px]">
-                    reputation:{" "}
+                    {t("escrow.reputationLabel")}{" "}
                     <span className="text-emerald-500">
                       {selectedFence.avatar.reputation}
                     </span>
@@ -1182,7 +1239,7 @@ export function EscrowPanel() {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-[10px] font-mono">
                     <span className="text-muted-foreground">
-                      Daily spent / cap
+                      {t("escrow.dailySpentCap")}
                     </span>
                     <span className="text-emerald-600 dark:text-emerald-400">
                       {formatToken(selectedFence.fence.dailySpent)} /{" "}
@@ -1197,7 +1254,7 @@ export function EscrowPanel() {
                     className="h-1.5 bg-emerald-500/10"
                   />
                   <div className="text-[10px] font-mono text-muted-foreground">
-                    remaining:{" "}
+                    {t("escrow.remainingLabel")}{" "}
                     <span className="text-foreground">
                       {formatToken(
                         selectedFence.fence.dailyCap -
@@ -1210,7 +1267,7 @@ export function EscrowPanel() {
                 {/* Allowed scopes */}
                 <div className="space-y-1">
                   <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                    Allowed Scopes (Scope Lock)
+                    {t("escrow.allowedScopesLock")}
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {selectedFence.fence.allowedScopes.map((s) => (
@@ -1228,17 +1285,17 @@ export function EscrowPanel() {
                 {/* Decaying threshold */}
                 <div className="space-y-1">
                   <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                    Decaying Threshold
+                    {t("escrow.decayingThreshold")}
                   </div>
                   <div className="flex items-center justify-between text-[11px] font-mono">
                     <span>
-                      threshold:{" "}
+                      {t("escrow.thresholdLabel")}{" "}
                       <span className="text-amber-500">
                         {formatToken(selectedFence.fence.decayingThreshold)}
                       </span>
                     </span>
                     <span>
-                      authFactor:{" "}
+                      {t("escrow.authFactorLabel")}{" "}
                       <span
                         className={
                           selectedFence.fence.authDecayFactor < 0.5
@@ -1251,8 +1308,7 @@ export function EscrowPanel() {
                     </span>
                   </div>
                   <p className="text-[10px] text-muted-foreground font-mono leading-relaxed">
-                    Amounts above threshold + decayed authFactor (&lt; 0.5) →
-                    REQUIRE_HUMAN_AUTH.
+                    {t("escrow.amountAboveThreshold")}
                   </p>
                 </div>
 
@@ -1264,29 +1320,29 @@ export function EscrowPanel() {
                   onClick={testScopeViolation}
                 >
                   <Bug className="h-3.5 w-3.5" />
-                  Test Scope Violation (scope=medical)
+                  {t("escrow.testScopeViolation")}
                 </Button>
               </div>
             ) : (
               <div className="rounded-md border border-dashed border-border/60 p-6 text-center text-[11px] text-muted-foreground font-mono">
-                Select an avatar with a BudgetFence to inspect.
+                {t("escrow.selectAvatarWithFence")}
               </div>
             )}
           </PanelCard>
 
           {/* Quick reference: rejection reasons */}
-          <PanelCard title="BudgetFence Status Map" icon={AlertTriangle}>
+          <PanelCard title={t("escrow.budgetFenceStatusMap")} icon={AlertTriangle}>
             <div className="space-y-2 text-[11px] font-mono">
               {[
                 {
                   s: "APPROVED",
                   c: "text-emerald-500",
-                  d: "scope matches + within daily cap + auth ok",
+                  d: t("escrow.statusApprovedDesc"),
                 },
                 {
                   s: "REJECT_SCOPE",
                   c: "text-rose-500",
-                  d: "scope not in allowedScopes (triggers Decaying Auth)",
+                  d: t("escrow.statusRejectScopeDesc"),
                 },
                 {
                   s: "REJECT_DAILY_CAP",
@@ -1313,33 +1369,33 @@ export function EscrowPanel() {
           </PanelCard>
 
           {/* Quick ref: test vectors */}
-          <PanelCard title="RFC Test Vectors" icon={FlaskConical}>
+          <PanelCard title={t("escrow.rfcTestVectors")} icon={FlaskConical}>
             <Tabs defaultValue="tv1">
               <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="tv1" className="text-[10px] font-mono">
-                  TV1 · Scope Lock
+                  {t("escrow.tv1ScopeLock")}
                 </TabsTrigger>
                 <TabsTrigger value="tv2" className="text-[10px] font-mono">
-                  TV2 · Clawback
+                  {t("escrow.tv2Clawback")}
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="tv1" className="mt-2">
                 <div className="rounded-md border border-border/40 bg-card/30 p-3 text-[10px] font-mono leading-relaxed space-y-1.5">
                   <div>
-                    <span className="text-muted-foreground">case:</span>{" "}
+                    <span className="text-muted-foreground">{t("escrow.caseLabel")}</span>{" "}
                     Scope_Lock_Violation
                   </div>
                   <div>
-                    <span className="text-muted-foreground">scope:</span>{" "}
+                    <span className="text-muted-foreground">{t("escrow.scopeLabel")}:</span>{" "}
                     <span className="text-rose-500">medical_diagnosis</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">expected:</span>{" "}
+                    <span className="text-muted-foreground">{t("escrow.expectedLabel")}</span>{" "}
                     REVERT / REJECT_SCOPE
                   </div>
                   <div>
-                    <span className="text-muted-foreground">fallback:</span>{" "}
-                    Trigger Decaying Auth → Human Master Signature
+                    <span className="text-muted-foreground">{t("escrow.fallbackLabel")}</span>{" "}
+                    {t("escrow.triggerDecayingAuth")}
                   </div>
                   <Button
                     variant="outline"
@@ -1348,33 +1404,32 @@ export function EscrowPanel() {
                     onClick={runScopeLockViolationTest}
                   >
                     <FlaskConical className="h-3 w-3" />
-                    Run Vector 1
+                    {t("escrow.runVector1")}
                   </Button>
                 </div>
               </TabsContent>
               <TabsContent value="tv2" className="mt-2">
                 <div className="rounded-md border border-border/40 bg-card/30 p-3 text-[10px] font-mono leading-relaxed space-y-1.5">
                   <div>
-                    <span className="text-muted-foreground">case:</span>{" "}
+                    <span className="text-muted-foreground">{t("escrow.caseLabel")}</span>{" "}
                     Stream_Overpayment_Clawback
                   </div>
                   <div>
-                    <span className="text-muted-foreground">setup:</span>{" "}
+                    <span className="text-muted-foreground">{t("escrow.setupLabel")}</span>{" "}
                     total=1000, released=900
                   </div>
                   <div>
-                    <span className="text-muted-foreground">mcp pct:</span> 80 →
+                    <span className="text-muted-foreground">{t("escrow.mcpPctLabel")}</span> 80 →
                     finalPayout=800
                   </div>
                   <div>
-                    <span className="text-muted-foreground">expected:</span>{" "}
+                    <span className="text-muted-foreground">{t("escrow.expectedLabel")}</span>{" "}
                     <span className="text-rose-500">
                       Disputed, clawback=100
                     </span>
                   </div>
                   <div className="text-muted-foreground text-[9px] mt-1">
-                    Reproduce: create escrow (60s), call streamRelease until
-                    ≥80% released, then call verifyAndSettle with pct=80.
+                    {t("escrow.reproduceTv2")}
                   </div>
                 </div>
               </TabsContent>

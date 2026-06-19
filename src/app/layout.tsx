@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AP2 Protocol Explorer | Avatar Payments Protocol v1.0",
   description:
-    "Web4.0 Avatar Payments Protocol (AP2) v1.0 — Interactive explorer & simulation console. Mirrors RFC v1.0 core contracts: AP2Escrow, BudgetFence, TDPO, CIP, CDS SBT, CognitiveDAG+CPDF, PCMG.",
+    "Web4.0 Avatar Payments Protocol (AP2) v1.0 — Interactive explorer & simulation console. Mirrors RFC v1.0 core contracts: AP2Escrow, BudgetFence, TDPO, CIP, CDS SBT, CognitiveDAG+CPDF, PCMG. Bilingual (中文/English).",
   keywords: [
     "AP2",
     "Avatar Payments Protocol",
@@ -45,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >

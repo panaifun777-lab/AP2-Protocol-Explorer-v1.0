@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useT, useLang } from "@/lib/i18n";
 import {
   type PhysicsIntentStatus,
   type PCMGVerifyResult,
@@ -101,36 +102,37 @@ type IntentRow = {
 // ============================================================
 const STATUS_STYLE: Record<
   PhysicsIntentStatus,
-  { label: string; cls: string; dot: string }
+  { labelKey: string; cls: string; dot: string }
 > = {
   Pending: {
-    label: "Pending",
+    labelKey: "common.pending",
     cls: "border-muted-foreground/30 text-muted-foreground",
     dot: "bg-muted-foreground",
   },
   Executing: {
-    label: "Executing",
+    labelKey: "common.executing",
     cls: "border-amber-500/40 text-amber-600 dark:text-amber-400",
     dot: "bg-amber-500",
   },
   Verifying: {
-    label: "Verifying",
+    labelKey: "common.verifying",
     cls: "border-cyan-500/40 text-cyan-600 dark:text-cyan-400",
     dot: "bg-cyan-500",
   },
   Completed: {
-    label: "Completed",
+    labelKey: "common.completed",
     cls: "border-emerald-500/40 text-emerald-600 dark:text-emerald-400",
     dot: "bg-emerald-500",
   },
   Slashed: {
-    label: "Slashed",
+    labelKey: "common.slashed",
     cls: "border-rose-500/40 text-rose-600 dark:text-rose-400",
     dot: "bg-rose-500",
   },
 };
 
 function StatusBadge({ status }: { status: PhysicsIntentStatus }) {
+  const t = useT();
   const s = STATUS_STYLE[status];
   return (
     <Badge
@@ -138,7 +140,7 @@ function StatusBadge({ status }: { status: PhysicsIntentStatus }) {
       className={cn("font-mono text-[10px] gap-1", s.cls)}
     >
       <span className={cn("h-1.5 w-1.5 rounded-full", s.dot)} />
-      {s.label}
+      {t(s.labelKey as never)}
     </Badge>
   );
 }
@@ -150,24 +152,19 @@ type PresetId = "perfect" | "dissonance" | "forged";
 
 interface PresetDef {
   id: PresetId;
-  title: string;
   hint: string;
-  description: string;
   constraints: string;
   amountUsdc: number;
   fidelity: number;
   resonance: number;
   expected: "Completed" | "Slashed" | "Rejected";
-  expectedLabel: string;
   accent: "emerald" | "rose" | "amber";
 }
 
 const PRESETS: PresetDef[] = [
   {
     id: "perfect",
-    title: "Perfect Latte",
     hint: "fidelity 9500 · resonance 8800",
-    description: "Buy me a relaxing latte (cafe, 30min)",
     constraints: JSON.stringify(
       { location: "BlueBottle Cafe", item: "oat-milk latte", time: "30min" },
       null,
@@ -177,14 +174,11 @@ const PRESETS: PresetDef[] = [
     fidelity: 9500,
     resonance: 8800,
     expected: "Completed",
-    expectedLabel: "→ Completed · funds released",
     accent: "emerald",
   },
   {
     id: "dissonance",
-    title: "Cold Coffee Dissonance",
     hint: "fidelity 9200 · resonance 3000",
-    description: "Buy me a relaxing latte (got cold bitter coffee)",
     constraints: JSON.stringify(
       { location: "vending-machine", item: "cold black coffee", time: "5min" },
       null,
@@ -194,14 +188,11 @@ const PRESETS: PresetDef[] = [
     fidelity: 9200,
     resonance: 3000,
     expected: "Slashed",
-    expectedLabel: "→ Slashed · ECE resonance failed",
     accent: "rose",
   },
   {
     id: "forged",
-    title: "Forged Proof",
     hint: "fidelity 6500 · resonance 9000",
-    description: "Buy me a relaxing latte (AI-faked photo proof)",
     constraints: JSON.stringify(
       { location: "unknown", item: "stock photo", time: "0min" },
       null,
@@ -211,16 +202,39 @@ const PRESETS: PresetDef[] = [
     fidelity: 6500,
     resonance: 9000,
     expected: "Rejected",
-    expectedLabel: "→ 400 · Physical proof invalid",
     accent: "amber",
   },
 ];
+
+// Translation key map for preset display strings (title / description / expected label)
+const PRESET_LABELS: Record<
+  PresetId,
+  { title: string; desc: string; expected: string }
+> = {
+  perfect: {
+    title: "pcmg.runPerfectLatte",
+    desc: "pcmg.presetPerfectDesc",
+    expected: "pcmg.presetPerfectExpected",
+  },
+  dissonance: {
+    title: "pcmg.runColdCoffee",
+    desc: "pcmg.presetDissonanceDesc",
+    expected: "pcmg.presetDissonanceExpected",
+  },
+  forged: {
+    title: "pcmg.runForgedProof",
+    desc: "pcmg.presetForgedDesc",
+    expected: "pcmg.presetForgedExpected",
+  },
+};
 
 // ============================================================
 // Main panel
 // ============================================================
 export function PcmgPanel() {
   const { toast } = useToast();
+  const t = useT();
+  const lang = useLang((s) => s.lang);
 
   // server state
   const [avatars, setAvatars] = React.useState<AvatarOption[]>([]);
@@ -295,21 +309,21 @@ export function PcmgPanel() {
         setAvatars(parsed.data.avatars);
       } else {
         toast({
-          title: "Failed to load PCMG data",
+          title: lang === "zh" ? "加载 PCMG 数据失败" : "Failed to load PCMG data",
           description: parsed.error,
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
     } finally {
       setLoadingList(false);
     }
-  }, [toast]);
+  }, [toast, lang]);
 
   React.useEffect(() => {
     void refresh();
@@ -341,8 +355,11 @@ export function PcmgPanel() {
       const eId = opts?.executorAvatarId ?? executorId;
       if (!cId || !eId) {
         toast({
-          title: "Missing input",
-          description: "Select both a creator avatar and an executor.",
+          title: lang === "zh" ? "缺少输入" : "Missing input",
+          description:
+            lang === "zh"
+              ? "请选择创建者分身和执行者。"
+              : "Select both a creator avatar and an executor.",
           variant: "destructive",
         });
         return null;
@@ -371,15 +388,19 @@ export function PcmgPanel() {
         }>(json);
         if (!parsed.ok || !parsed.data) {
           toast({
-            title: "Bridge failed",
-            description: parsed.error ?? "Unknown error",
+            title: lang === "zh" ? "桥接失败" : "Bridge failed",
+            description:
+              parsed.error ?? (lang === "zh" ? "未知错误" : "Unknown error"),
             variant: "destructive",
           });
           return null;
         }
         if (!opts?.silent) {
           toast({
-            title: "Intent bridged to physical membrane",
+            title:
+              lang === "zh"
+                ? "意图已桥接至物理膜"
+                : "Intent bridged to physical membrane",
             description: `${desc.slice(0, 40)} → status: Executing`,
           });
         }
@@ -395,7 +416,7 @@ export function PcmgPanel() {
         return fresh;
       } catch (e) {
         toast({
-          title: "Network error",
+          title: lang === "zh" ? "网络错误" : "Network error",
           description: (e as Error).message,
           variant: "destructive",
         });
@@ -414,6 +435,7 @@ export function PcmgPanel() {
       avatars,
       refresh,
       toast,
+      lang,
     ],
   );
 
@@ -427,8 +449,11 @@ export function PcmgPanel() {
       const target = currentIntent;
       if (!target && !opts?.intentHash) {
         toast({
-          title: "No active intent",
-          description: "Bridge an intent first (Phase 1).",
+          title: lang === "zh" ? "无活跃意图" : "No active intent",
+          description:
+            lang === "zh"
+              ? "请先桥接意图(阶段 1)。"
+              : "Bridge an intent first (Phase 1).",
           variant: "destructive",
         });
         return null;
@@ -455,7 +480,10 @@ export function PcmgPanel() {
         if (!parsed.ok || !parsed.data) {
           setVerifyError(parsed.error ?? "Verify failed");
           toast({
-            title: "Proof rejected (require reverted)",
+            title:
+              lang === "zh"
+                ? "证明被拒绝(require 回滚)"
+                : "Proof rejected (require reverted)",
             description: parsed.error,
             variant: "destructive",
           });
@@ -465,13 +493,19 @@ export function PcmgPanel() {
         setVerifyResult(parsed.data);
         if (parsed.data.status === "Completed") {
           toast({
-            title: "Physics execution verified",
-            description: `Resonance ${parsed.data.resonanceScore} · funds released + creator reputation +1`,
+            title: lang === "zh" ? "物理执行已验证" : "Physics execution verified",
+            description:
+              lang === "zh"
+                ? `共振度 ${parsed.data.resonanceScore} · 资金已释放 + 创建者声誉 +1`
+                : `Resonance ${parsed.data.resonanceScore} · funds released + creator reputation +1`,
           });
         } else if (parsed.data.status === "Slashed") {
           toast({
-            title: "Executor slashed",
-            description: `Resonance ${parsed.data.resonanceScore} · stake refunded to creator`,
+            title: lang === "zh" ? "执行者已罚没" : "Executor slashed",
+            description:
+              lang === "zh"
+                ? `共振度 ${parsed.data.resonanceScore} · 押金退还给创建者`
+                : `Resonance ${parsed.data.resonanceScore} · stake refunded to creator`,
             variant: "destructive",
           });
         }
@@ -480,7 +514,7 @@ export function PcmgPanel() {
       } catch (e) {
         setVerifyError((e as Error).message);
         toast({
-          title: "Network error",
+          title: lang === "zh" ? "网络错误" : "Network error",
           description: (e as Error).message,
           variant: "destructive",
         });
@@ -489,7 +523,7 @@ export function PcmgPanel() {
         setVerifying(false);
       }
     },
-    [currentIntent, fidelity, resonance, refresh, toast],
+    [currentIntent, fidelity, resonance, refresh, toast, lang],
   );
 
   // ----- preset runner -----
@@ -497,7 +531,7 @@ export function PcmgPanel() {
     async (preset: PresetDef) => {
       // 1) bridge a fresh intent with scenario-specific config
       const fresh = await bridge({
-        description: preset.description,
+        description: t(PRESET_LABELS[preset.id].desc as never),
         constraints: preset.constraints,
         amount: preset.amountUsdc,
         silent: true,
@@ -513,7 +547,7 @@ export function PcmgPanel() {
         resonance: preset.resonance,
       });
     },
-    [bridge, submitProof],
+    [bridge, submitProof, t],
   );
 
   // ----- phase 1 form submit -----
@@ -542,9 +576,9 @@ export function PcmgPanel() {
     <div className="space-y-6">
       <PanelHeader
         icon={Crosshair}
-        title="PCMG Phygital Cross-Membrane Gateway"
+        title={t("pcmg.title")}
         rfcSection="RFC §5.3"
-        description="Digital intent → physical execution → multimodal proof → ECE resonance validation → slashing. Mirrors PhygitalGateway.sol (fidelity > 8000 AND resonance > 7500)."
+        description={t("pcmg.description")}
         accent="rose"
         actions={
           <Button
@@ -555,7 +589,7 @@ export function PcmgPanel() {
             disabled={loadingList}
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            Refresh
+            {t("pcmg.refresh")}
           </Button>
         }
       />
@@ -563,33 +597,33 @@ export function PcmgPanel() {
       {/* ============ STATS ============ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Stat
-          label="Total Intents"
+          label={t("pcmg.totalIntents")}
           value={stats.total}
-          hint="all physics intents"
+          hint={t("pcmg.statHintTotal")}
           accent="rose"
         />
         <Stat
-          label="Executing"
+          label={t("pcmg.executingCount")}
           value={stats.executing}
-          hint="awaiting proof"
+          hint={t("pcmg.statHintExecuting")}
           accent="amber"
         />
         <Stat
-          label="Completed"
+          label={t("pcmg.completedCount")}
           value={stats.completed}
-          hint="funds released"
+          hint={t("pcmg.statHintCompleted")}
           accent="emerald"
         />
         <Stat
-          label="Slashed"
+          label={t("pcmg.slashedCount")}
           value={stats.slashed}
-          hint="stake refunded"
+          hint={t("pcmg.statHintSlashed")}
           accent="rose"
         />
       </div>
 
       {/* ============ PRESETS ============ */}
-      <PanelCard title="Quick Scenarios" icon={FlaskConical}>
+      <PanelCard title={t("pcmg.quickScenarios")} icon={FlaskConical}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {PRESETS.map((p) => (
             <PresetButton
@@ -601,8 +635,7 @@ export function PcmgPanel() {
           ))}
         </div>
         <p className="mt-3 text-[10px] text-muted-foreground font-mono">
-          Each preset auto-bridges a fresh intent, sets the fidelity/resonance
-          sliders, and submits the proof — end-to-end through all 4 phases.
+          {t("pcmg.quickScenariosDesc")}
         </p>
       </PanelCard>
 
@@ -610,8 +643,8 @@ export function PcmgPanel() {
       <div className="flex flex-col lg:flex-row lg:items-stretch gap-2">
         <PhaseShell
           phase={1}
-          title="意图降维 Intent Bridge"
-          subtitle="Digital → Physical membrane"
+          title={t("pcmg.phase1")}
+          subtitle={t("pcmg.phase1Subtitle")}
           icon={Zap}
           accent="rose"
           className="flex-1 min-w-0"
@@ -644,8 +677,8 @@ export function PcmgPanel() {
 
         <PhaseShell
           phase={2}
-          title="物理执行 Physical Execution"
-          subtitle="Multimodal proof capture"
+          title={t("pcmg.phase2")}
+          subtitle={t("pcmg.phase2Subtitle")}
           icon={Cpu}
           accent="amber"
           className="flex-1 min-w-0"
@@ -667,8 +700,8 @@ export function PcmgPanel() {
 
         <PhaseShell
           phase={3}
-          title="逆映射校验 Reverse Mapping"
-          subtitle="ZK verify + ECE resonance"
+          title={t("pcmg.phase3")}
+          subtitle={t("pcmg.phase3Subtitle")}
           icon={Radio}
           accent="cyan"
           className="flex-1 min-w-0"
@@ -688,8 +721,8 @@ export function PcmgPanel() {
 
         <PhaseShell
           phase={4}
-          title="跨膜结算 Cross-Membrane Settle"
-          subtitle="Release funds or slash"
+          title={t("pcmg.phase4")}
+          subtitle={t("pcmg.phase4Subtitle")}
           icon={Banknote}
           accent="emerald"
           className="flex-1 min-w-0"
@@ -706,11 +739,11 @@ export function PcmgPanel() {
 
       {/* ============ ACTIVE INTENTS TABLE ============ */}
       <PanelCard
-        title="Active Physics Intents"
+        title={t("pcmg.activeIntents")}
         icon={Activity}
         action={
           <Badge variant="outline" className="font-mono text-[10px]">
-            {intents.length} records
+            {intents.length} {t("pcmg.recordsCount")}
           </Badge>
         }
       >
@@ -719,25 +752,25 @@ export function PcmgPanel() {
             <TableHeader>
               <TableRow>
                 <TableHead className="font-mono text-[10px] uppercase">
-                  Intent
+                  {t("pcmg.intentCol")}
                 </TableHead>
                 <TableHead className="font-mono text-[10px] uppercase">
-                  Creator
+                  {t("pcmg.creator")}
                 </TableHead>
                 <TableHead className="font-mono text-[10px] uppercase">
-                  Executor
+                  {t("pcmg.executor")}
                 </TableHead>
                 <TableHead className="font-mono text-[10px] uppercase">
                   $AFC
                 </TableHead>
                 <TableHead className="font-mono text-[10px] uppercase">
-                  Fidelity
+                  {t("pcmg.fidelity")}
                 </TableHead>
                 <TableHead className="font-mono text-[10px] uppercase">
-                  Resonance
+                  {t("pcmg.resonance")}
                 </TableHead>
                 <TableHead className="font-mono text-[10px] uppercase">
-                  Status
+                  {t("common.status")}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -748,7 +781,7 @@ export function PcmgPanel() {
                     colSpan={7}
                     className="text-center text-muted-foreground font-mono text-xs py-8"
                   >
-                    No physics intents yet. Bridge one above or run a preset.
+                    {t("pcmg.noIntents")}
                   </TableCell>
                 </TableRow>
               )}
@@ -818,7 +851,7 @@ export function PcmgPanel() {
       <Alert className="border-rose-500/30 bg-rose-500/5">
         <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
         <AlertTitle className="font-mono text-xs text-rose-600 dark:text-rose-400">
-          RFC §5.3 — Two-Threshold Validation
+          {t("pcmg.rfcValidationTitle")}
         </AlertTitle>
         <AlertDescription className="font-mono text-[11px] text-muted-foreground">
           <code>
@@ -830,9 +863,7 @@ export function PcmgPanel() {
             if (isResonant && resonanceScore &gt;{" "}
             {RFC_CONSTANTS.PCMG_RESONANCE_THRESHOLD})
           </code>
-          . A low-fidelity proof 400-rejects BEFORE the resonance check
-          (mirrors Solidity require-revert ordering). Slashing refunds the full{" "}
-          <code>afcEscrowAmount</code> to the creator.
+          . {t("pcmg.rfcValidationDesc")}
         </AlertDescription>
       </Alert>
     </div>
@@ -851,6 +882,8 @@ function PresetButton({
   disabled?: boolean;
   onClick: () => void;
 }) {
+  const t = useT();
+  const labels = PRESET_LABELS[preset.id];
   const accentCls: Record<PresetDef["accent"], string> = {
     emerald:
       "border-emerald-500/40 hover:border-emerald-500/70 hover:bg-emerald-500/5 text-emerald-700 dark:text-emerald-300",
@@ -870,13 +903,15 @@ function PresetButton({
     >
       <div className="flex items-center gap-2">
         <Coffee className="h-4 w-4" />
-        <span className="font-mono text-xs font-bold">{preset.title}</span>
+        <span className="font-mono text-xs font-bold">
+          {t(labels.title as never)}
+        </span>
       </div>
       <span className="text-[10px] text-muted-foreground font-mono">
         {preset.hint}
       </span>
       <span className="text-[10px] font-mono opacity-80">
-        {preset.expectedLabel}
+        {t(labels.expected as never)}
       </span>
     </button>
   );
@@ -1008,6 +1043,7 @@ function Phase1Form(props: {
   onBridge: () => void;
   intentHashPreview: string;
 }) {
+  const t = useT();
   const constraintsValid = React.useMemo(() => {
     try {
       JSON.parse(props.physicsConstraints);
@@ -1020,13 +1056,13 @@ function Phase1Form(props: {
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
-        <Label className="text-[11px] font-mono">Creator Avatar</Label>
+        <Label className="text-[11px] font-mono">{t("pcmg.creatorAvatar")}</Label>
         <Select
           value={props.creatorAvatarId}
           onValueChange={props.setCreatorAvatarId}
         >
           <SelectTrigger className="h-8 text-xs font-mono w-full">
-            <SelectValue placeholder="Select creator…" />
+            <SelectValue placeholder={t("pcmg.selectCreator")} />
           </SelectTrigger>
           <SelectContent>
             {props.avatars.map((a) => (
@@ -1039,21 +1075,21 @@ function Phase1Form(props: {
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-[11px] font-mono">Intent Description</Label>
+        <Label className="text-[11px] font-mono">{t("pcmg.intentDesc")}</Label>
         <Input
           value={props.description}
           onChange={(e) => props.setDescription(e.target.value)}
           className="h-8 text-xs font-mono"
-          placeholder="e.g. Buy me a relaxing latte"
+          placeholder={t("pcmg.intentDescPlaceholder")}
         />
         <p className="text-[10px] text-muted-foreground font-mono truncate">
-          hash: {props.intentHashPreview.slice(0, 30)}…
+          {t("pcmg.hashLabel")} {props.intentHashPreview.slice(0, 30)}…
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1.5">
-          <Label className="text-[11px] font-mono">$AFC Amount</Label>
+          <Label className="text-[11px] font-mono">{t("pcmg.amountAfc")}</Label>
           <Input
             type="number"
             min={0.01}
@@ -1066,7 +1102,7 @@ function Phase1Form(props: {
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-[11px] font-mono">Deadline (min)</Label>
+          <Label className="text-[11px] font-mono">{t("pcmg.deadlineMin")}</Label>
           <Input
             type="number"
             min={1}
@@ -1082,7 +1118,7 @@ function Phase1Form(props: {
 
       <div className="space-y-1.5">
         <Label className="text-[11px] font-mono flex items-center justify-between">
-          <span>Physics Constraints (JSON)</span>
+          <span>{t("pcmg.physicsConstraints")}</span>
           <span
             className={cn(
               "text-[10px]",
@@ -1091,7 +1127,9 @@ function Phase1Form(props: {
                 : "text-rose-600 dark:text-rose-400",
             )}
           >
-            {constraintsValid ? "valid" : "invalid JSON"}
+            {constraintsValid
+              ? t("pcmg.jsonValid")
+              : t("pcmg.jsonInvalid")}
           </span>
         </Label>
         <Textarea
@@ -1103,10 +1141,10 @@ function Phase1Form(props: {
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-[11px] font-mono">Physical Executor</Label>
+        <Label className="text-[11px] font-mono">{t("pcmg.physicalExecutor")}</Label>
         <Select value={props.executorId} onValueChange={props.setExecutorId}>
           <SelectTrigger className="h-8 text-xs font-mono w-full">
-            <SelectValue placeholder="Select executor…" />
+            <SelectValue placeholder={t("pcmg.selectExecutor")} />
           </SelectTrigger>
           <SelectContent>
             {props.avatars.map((a) => (
@@ -1136,11 +1174,11 @@ function Phase1Form(props: {
         ) : (
           <Zap className="h-3.5 w-3.5" />
         )}
-        Bridge to Physical
+        {t("pcmg.bridgeBtn")}
       </Button>
       {props.avatars.length === 0 && (
         <p className="text-[10px] text-muted-foreground font-mono">
-          No avatars found. Run /api/seed first.
+          {t("pcmg.noAvatars")}
         </p>
       )}
     </div>
@@ -1160,13 +1198,14 @@ function Phase2Execution(props: {
   resonancePass: boolean;
   bothPass: boolean;
 }) {
+  const t = useT();
   return (
     <div className="space-y-3">
       {props.currentIntent ? (
         <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5 space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] text-muted-foreground uppercase">
-              Bridged Intent
+              {t("pcmg.bridgedIntent")}
             </span>
             <StatusBadge status={props.currentIntent.status} />
           </div>
@@ -1178,7 +1217,7 @@ function Phase2Execution(props: {
               {formatToken(props.currentIntent.afcEscrowAmount)}
             </span>
             <span className="text-muted-foreground">
-              escrow locked
+              {t("pcmg.escrowLocked")}
             </span>
           </div>
         </div>
@@ -1186,7 +1225,7 @@ function Phase2Execution(props: {
         <div className="rounded-md border border-dashed border-border/60 p-3 text-center">
           <Cpu className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
           <p className="text-[10px] text-muted-foreground font-mono">
-            No active intent. Bridge one in Phase 1.
+            {t("pcmg.noActiveIntentBridge")}
           </p>
         </div>
       )}
@@ -1195,7 +1234,7 @@ function Phase2Execution(props: {
 
       <div className="space-y-1.5">
         <Label className="text-[11px] font-mono flex items-center justify-between">
-          <span>Fidelity (M-Pata ZK)</span>
+          <span>{t("pcmg.fidelityLabel")}</span>
           <span
             className={cn(
               "font-bold",
@@ -1220,13 +1259,13 @@ function Phase2Execution(props: {
           )}
         />
         <p className="text-[10px] text-muted-foreground font-mono">
-          spatial audio + temp sensor + HRV
+          {t("pcmg.fidelityHint")}
         </p>
       </div>
 
       <div className="space-y-1.5">
         <Label className="text-[11px] font-mono flex items-center justify-between">
-          <span>Resonance (ECE state vector)</span>
+          <span>{t("pcmg.resonanceLabel")}</span>
           <span
             className={cn(
               "font-bold",
@@ -1251,7 +1290,7 @@ function Phase2Execution(props: {
           )}
         />
         <p className="text-[10px] text-muted-foreground font-mono">
-          emotional baseline match
+          {t("pcmg.resonanceHint")}
         </p>
       </div>
 
@@ -1280,12 +1319,12 @@ function Phase2Execution(props: {
             )}
           >
             {props.bothPass
-              ? "Both thresholds satisfied"
+              ? t("pcmg.bothSatisfied")
               : props.fidelityPass
-                ? "Resonance below threshold"
+                ? t("pcmg.resonanceBelow")
                 : props.resonancePass
-                  ? "Fidelity below threshold"
-                  : "Both thresholds failed"}
+                  ? t("pcmg.fidelityBelow")
+                  : t("pcmg.bothFailed")}
           </p>
           <p className="text-[10px] text-muted-foreground font-mono">
             {props.fidelityPass ? "✓" : "✗"} fidelity &gt;{" "}
@@ -1310,6 +1349,8 @@ function Phase3Verify(props: {
   onVerify: () => void;
   verifyResult: PCMGVerifyResult | null;
 }) {
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   const ready =
     !!props.currentIntent && props.currentIntent.status === "Executing";
 
@@ -1318,7 +1359,7 @@ function Phase3Verify(props: {
       <div className="rounded-md border border-cyan-500/30 bg-cyan-500/5 p-2.5 space-y-2">
         <div className="flex items-center justify-between">
           <span className="font-mono text-[10px] text-muted-foreground uppercase">
-            Step 1 · Physics Oracle
+            {t("pcmg.step1PhysicsOracle")}
           </span>
           <Badge
             variant="outline"
@@ -1333,13 +1374,13 @@ function Phase3Verify(props: {
       <div className="rounded-md border border-violet-500/30 bg-violet-500/5 p-2.5 space-y-2">
         <div className="flex items-center justify-between">
           <span className="font-mono text-[10px] text-muted-foreground uppercase">
-            Step 2 · ECE Resonance
+            {t("pcmg.step2EceResonance")}
           </span>
           <Badge
             variant="outline"
             className="font-mono text-[10px] border-violet-500/40 text-violet-600 dark:text-violet-400"
           >
-            Emotional baseline
+            {t("pcmg.emotionalBaseline")}
           </Badge>
         </div>
         <ResonanceMeter value={props.resonance} />
@@ -1357,13 +1398,15 @@ function Phase3Verify(props: {
         ) : (
           <Radio className="h-3.5 w-3.5" />
         )}
-        Submit Proof &amp; Verify
+        {t("pcmg.submitProof")}
       </Button>
       {!ready && (
         <p className="text-[10px] text-muted-foreground font-mono">
           {props.currentIntent
-            ? `Intent is ${props.currentIntent.status} (must be Executing).`
-            : "Bridge an intent in Phase 1 first."}
+            ? lang === "zh"
+              ? `意图状态为 ${props.currentIntent.status}(需为 Executing)。`
+              : `Intent is ${props.currentIntent.status} (must be Executing).`
+            : t("pcmg.bridgeFirstPhase1")}
         </p>
       )}
     </div>
@@ -1371,6 +1414,7 @@ function Phase3Verify(props: {
 }
 
 function FidelityMeter({ value }: { value: number }) {
+  const t = useT();
   const pass = value > PCMG_THRESHOLDS.fidelity;
   const pct = (value / 10000) * 100;
   return (
@@ -1410,14 +1454,14 @@ function FidelityMeter({ value }: { value: number }) {
           <>
             <ShieldCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
             <span className="text-emerald-600 dark:text-emerald-400">
-              Physical proof valid
+              {t("pcmg.physicalProofValid")}
             </span>
           </>
         ) : (
           <>
             <ShieldAlert className="h-3 w-3 text-rose-600 dark:text-rose-400" />
             <span className="text-rose-600 dark:text-rose-400">
-              Low fidelity — require will revert
+              {t("pcmg.lowFidelityRevert")}
             </span>
           </>
         )}
@@ -1427,6 +1471,7 @@ function FidelityMeter({ value }: { value: number }) {
 }
 
 function ResonanceMeter({ value }: { value: number }) {
+  const t = useT();
   const pass = value > PCMG_THRESHOLDS.resonance;
   const pct = (value / 10000) * 100;
   return (
@@ -1477,8 +1522,8 @@ function ResonanceMeter({ value }: { value: number }) {
           )}
         >
           {pass
-            ? "Emotional resonance aligned"
-            : "Emotional dissonance detected"}
+            ? t("pcmg.emotionalResonanceAligned")
+            : t("pcmg.emotionalDissonanceDetected")}
         </span>
       </div>
     </div>
@@ -1494,6 +1539,7 @@ function Phase4Settle(props: {
   currentIntent: IntentRow | null;
   onReset: () => void;
 }) {
+  const t = useT();
   return (
     <div className="space-y-3">
       <AnimatePresence mode="wait">
@@ -1508,14 +1554,12 @@ function Phase4Settle(props: {
             <Alert variant="destructive" className="border-rose-500/40">
               <XCircle className="h-4 w-4" />
               <AlertTitle className="font-mono text-xs">
-                Proof Rejected (400)
+                {t("pcmg.proofRejected400")}
               </AlertTitle>
               <AlertDescription className="font-mono text-[11px]">
                 {props.verifyError}
                 <p className="mt-1 text-[10px] text-muted-foreground">
-                  Transaction reverted before ECE check — physical fidelity
-                  below {PCMG_THRESHOLDS.fidelity} threshold. No state change
-                  persisted (intent stays Executing).
+                  {t("pcmg.revertedBeforeEce")}
                 </p>
               </AlertDescription>
             </Alert>
@@ -1534,33 +1578,33 @@ function Phase4Settle(props: {
             <Alert className="border-emerald-500/40 bg-emerald-500/5">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               <AlertTitle className="font-mono text-xs text-emerald-700 dark:text-emerald-300">
-                Physics Execution Verified
+                {t("pcmg.physicsExecutionVerified")}
               </AlertTitle>
               <AlertDescription className="font-mono text-[11px] space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status</span>
+                  <span className="text-muted-foreground">{t("common.status")}</span>
                   <span className="text-emerald-700 dark:text-emerald-300 font-bold">
-                    Completed
+                    {t("common.completed")}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fidelity</span>
+                  <span className="text-muted-foreground">{t("pcmg.fidelity")}</span>
                   <span>{props.verifyResult.fidelityScore}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Resonance</span>
+                  <span className="text-muted-foreground">{t("pcmg.resonance")}</span>
                   <span>{props.verifyResult.resonanceScore}</span>
                 </div>
                 <Separator className="my-1" />
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Funds released</span>
+                  <span className="text-muted-foreground">{t("pcmg.fundsReleased")}</span>
                   <span className="text-emerald-700 dark:text-emerald-300 font-bold">
                     {formatToken(props.verifyResult.rewardReleased)}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">
-                    Creator reputation
+                    {t("pcmg.creatorReputation")}
                   </span>
                   <span className="text-emerald-700 dark:text-emerald-300 font-bold">
                     +1
@@ -1583,28 +1627,28 @@ function Phase4Settle(props: {
             <Alert variant="destructive" className="border-rose-500/40">
               <ShieldAlert className="h-4 w-4" />
               <AlertTitle className="font-mono text-xs">
-                Executor Slashed
+                {t("pcmg.executorSlashed")}
               </AlertTitle>
               <AlertDescription className="font-mono text-[11px] space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status</span>
+                  <span className="text-muted-foreground">{t("common.status")}</span>
                   <span className="text-rose-700 dark:text-rose-300 font-bold">
-                    Slashed
+                    {t("common.slashed")}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fidelity</span>
+                  <span className="text-muted-foreground">{t("pcmg.fidelity")}</span>
                   <span>{props.verifyResult.fidelityScore}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Resonance</span>
+                  <span className="text-muted-foreground">{t("pcmg.resonance")}</span>
                   <span className="text-rose-700 dark:text-rose-300">
                     {props.verifyResult.resonanceScore}
                   </span>
                 </div>
                 <Separator className="my-1" />
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Slash amount</span>
+                  <span className="text-muted-foreground">{t("pcmg.slashAmount")}</span>
                   <span className="text-rose-700 dark:text-rose-300 font-bold">
                     {props.currentIntent
                       ? formatToken(props.currentIntent.afcEscrowAmount)
@@ -1612,11 +1656,11 @@ function Phase4Settle(props: {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Refunded to</span>
-                  <span>creator avatar</span>
+                  <span className="text-muted-foreground">{t("pcmg.refundedTo")}</span>
+                  <span>{t("pcmg.creatorAvatarRefund")}</span>
                 </div>
                 <div className="pt-1 text-[10px] text-rose-700 dark:text-rose-300">
-                  reason: {props.verifyResult.slashReason}
+                  {t("pcmg.reasonLabel")} {props.verifyResult.slashReason}
                 </div>
               </AlertDescription>
             </Alert>
@@ -1633,10 +1677,10 @@ function Phase4Settle(props: {
           >
             <Banknote className="h-5 w-5 text-muted-foreground mx-auto mb-1.5" />
             <p className="text-[11px] text-muted-foreground font-mono">
-              Awaiting verify in Phase 3.
+              {t("pcmg.awaitingVerify")}
             </p>
             <p className="text-[10px] text-muted-foreground/70 font-mono mt-0.5">
-              Completed → funds released · Slashed → refund
+              {t("pcmg.completedFundsSlashedRefund")}
             </p>
           </motion.div>
         )}
@@ -1650,7 +1694,7 @@ function Phase4Settle(props: {
           className="w-full font-mono text-xs gap-1.5"
         >
           <RotateCcw className="h-3.5 w-3.5" />
-          Reset Active Intent
+          {t("pcmg.resetActiveIntent")}
         </Button>
       )}
     </div>

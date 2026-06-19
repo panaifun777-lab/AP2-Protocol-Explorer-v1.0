@@ -73,6 +73,158 @@ import {
   type CoprocessorLayer,
   type RoadmapPhase,
 } from "@/lib/consensus";
+import { useT, useLang } from "@/lib/i18n";
+
+// ============================================================
+// Bilingual content maps — Chinese translations for data-driven
+// content (test vectors, consensus steps, coprocessor layers,
+// roadmap phases, scenarios). The source data lives in pure
+// data files (test-vectors.ts / consensus.ts) which we don't
+// modify; here we provide zh overrides keyed by id. When
+// lang === "en" the original English string is used.
+// ============================================================
+
+const VECTOR_TITLES_ZH: Record<string, string> = {
+  TV1: "BudgetFence 作用域锁违规",
+  TV2: "托管流式超付回拨",
+  TV3: "CIP 迁移阈值方差 (3 场景)",
+  TV4: "CDS SBT 灵魂绑定强制 (2 场景)",
+  TV5: "TDPO 非超前认知拒绝",
+  TV6: "TDPO 追溯奖励触发",
+  TV7: "PCMG 伪造/低保真证明拒绝",
+  TV8: "PCMG 情绪失调罚没",
+  TV9: "CPDF 黑洞 (低相似度 → 权重归零)",
+  TV10: "认知洗钱检测",
+};
+
+const VECTOR_DESCS_ZH: Record<string, string> = {
+  TV1:
+    "子代理 'lawyer' 尝试在作用域 'medical_diagnosis' 上花费 50 USDC,该作用域不在围栏的 allowedScopes [legal, compliance] 中。合约必须以 REJECT_SCOPE 拒绝,并触发衰减授权回退 (需人类主签名)。",
+  TV2:
+    "网络延迟导致流式释放了 90% 的资金,但 MCP 最终验证仅记 80% 完成度。合约必须进入 Disputed 状态,并要求 100 USDC 的超付回拨。",
+  TV3:
+    "意识迁移阈值边界情况。RFC 测试向量预期 9250→SUCCESS、8499→REVERT、10500→SUCCESS_WITH_FLAG。实际实现采用精炼的三区间 CIP_Lineage.sol 模型 (85% 纯粹 / 60% 最低 / <60% 拒绝),因此 8499 落入 FUSION_EMERGENCE 区间,10500 被拒绝 (超出 BPS 范围 [0,10000])。运行器按精炼模型断言。",
+  TV4:
+    "跨维度灵魂绑定代币无法手动转移 — transferFrom 必须回退。仅允许 CIP 触发的 soulTransfer,它轮换 owner 指针同时保留 tokenId + metadataHash。",
+  TV5:
+    "mean=50 (不 < 30) 且 variance=200 (不 > 500) 的认知未通过超前认知检查。合约必须拒绝锁定并返回 'Not a contrarian cognition'。",
+  TV6:
+    "时间锁到期后,一个 '随时间被证实为真理' 的超前认知 (futureMean=950 vs initialMean=15,citations=5000) 触发追溯补偿。evolutionFactor = floor(950/(15+1)) = 59 (Solidity 整数除法)。",
+  TV7:
+    "保真度=6500 (低于 8000 阈值) 的多模态物理证明必须在情绪共振检查之前 400 回退。镜像 Solidity require 顺序:先验证物理证明。",
+  TV8:
+    "物理证明高保真 (9200>8000) 但情绪共振低于阈值 (3000<=7500)。合约必须罚没执行者:status=Slashed,slashAmount=escrowAmount 退还给创建者。",
+  TV9:
+    "与核心锚点相似度=0.15 (低于 0.30 下限) 的融合分片被判定为认知垃圾。CPDF 必须将其边权重压至 0 并标记为黑洞节点,排除在谱系奖励之外。",
+  TV10:
+    "一个实体融合 12+ 个分片,平均 ECE 质量=500 (<2000) 且平均相似度=0.15 (<0.3)。CPDF 将全部黑洞化,启发式检测将该实体标记为认知洗钱模式。",
+};
+
+const SCENARIO_LABELS_ZH: Record<string, string> = {
+  "TV3-a": "matchScore=9250 (92.5% — 纯粹继承)",
+  "TV3-b": "matchScore=8499 (84.99% — 融合区间,谱系分账)",
+  "TV3-c": "matchScore=10500 (>BPS_MAX — 无效,回退)",
+  "TV4-a": "transferFrom (恶意手动转移)",
+  "TV4-b": "经 CIP 的 soulTransfer (意识迁移)",
+};
+
+const STEP_NAMES_ZH: Record<string, string> = {
+  "poue-1": "M-Pata 生物特征映射",
+  "poue-2": "行为时间序列",
+  "poue-3": "情绪基线提取",
+  "poue-4": "ZK 证明生成",
+  "poue-5": "链上验证",
+  "porc-1": "认知分片提交",
+  "porc-2": "熵减度量",
+  "porc-3": "共识投票",
+  "porc-4": "区块打包",
+  "porc-5": "$AFC 代币奖励",
+};
+
+const STEP_DESCS_ZH: Record<string, string> = {
+  "poue-1":
+    "可逆生物特征映射 (M-Pata) 将分身绑定到唯一活体实体,不在链上存储原始生物特征。",
+  "poue-2":
+    "长时域行为遥测 (交互节奏、决策熵) 被采样为抗女巫的指纹。",
+  "poue-3":
+    "ECE (情绪共识引擎) 提取私密的情绪基线向量,锚定分身的认知指纹。",
+  "poue-4":
+    "在链下生成 ZK-SNARK/STARK 证明,证明 '唯一活体实体' 而不泄露底层生物特征数据。",
+  "poue-5":
+    "AFC 链在链上验证 ZK 证明。通过验证的分身被准入共识池 — 即通往 PoRC 的门。",
+  "porc-1":
+    "分身将认知分片 (已解问题、共识投票、融合贡献) 提交到本轮池中。",
+  "porc-2":
+    "ECE 引擎按每个分片的熵减贡献 ΔH 评分 — 认知价值越高,分数越高。",
+  "porc-3":
+    "验证者对最高 ΔH 分片投票。绝对多数确认下一区块的领导者 (BFT 式最终性)。",
+  "porc-4":
+    "当选领导者将本轮确认分片 + 交易打包进下一个 AFC 区块 (目标出块 0.4s)。",
+  "porc-5":
+    "区块奖励 + 认知分片奖励以 $AFC 铸造给领导者及贡献分身,按 ΔH 权重分配。",
+};
+
+const COPROCESSOR_NAMES_ZH: Record<string, string> = {
+  tee: "TEE (可信执行环境)",
+  "zk-ml": "ZK-ML 证明生成",
+  graph: "原生图存储",
+};
+
+const COPROCESSOR_DESCS_ZH: Record<string, string> = {
+  tee: "在硬件 enclave (Intel SGX / ARM TrustZone) 内保密计算生物特征 + 行为特征。",
+  "zk-ml":
+    "对 ML 推理 (ECE 评分、相似度) 生成零知识证明 — 链验证证明,从不接触原始认知数据。",
+  graph:
+    "认知分片、谱系边和 CIP 灵魂绑定代币的 DAG 原生存储层 — 无外键阻抗。",
+};
+
+const PHASE_LABELS_ZH: Record<string, string> = {
+  "phase-1": "阶段一",
+  "phase-2": "阶段二",
+  "phase-3": "阶段三",
+};
+
+const PHASE_TITLES_ZH: Record<string, string> = {
+  "phase-1": "影子分身 (Base MVP)",
+  "phase-2": "主权降临 (AFC 主网)",
+  "phase-3": "虚实共生 (PCMG 全面开放)",
+};
+
+const PHASE_DESCS_ZH: Record<string, string> = {
+  "phase-1":
+    "在 Base 链上部署 AP2 核心合约 (Escrow、BudgetFence、TDPO)。发行 ERC-20 $AFC。链下 M-Pata 为白名单签署 PoUE VC。运行分身租赁 + 追溯锁定演示。",
+  "phase-2":
+    "启动 PoUE + PoRC 共识的 AFC 主网。开放认知状态迁移桥 — Base 链分身、TDPO 锁仓和 CDS SBT 无损映射到 AFC 主网。",
+  "phase-3":
+    "接入全球 IoT 设备 + Rent-a-Human 网络。数字意志通过虚实跨膜网关对物理世界实现绝对、安全的干预。",
+};
+
+const PHASE_DURATIONS_ZH: Record<string, string> = {
+  "phase-1": "第 1-3 月",
+  "phase-2": "第 4-6 月",
+  "phase-3": "第 7 月+",
+};
+
+const PHASE_MILESTONES_ZH: Record<string, string[]> = {
+  "phase-1": [
+    "AP2Escrow + BudgetFence 部署于 Base",
+    "ERC-20 $AFC 发行",
+    "链下 PoUE VC 白名单",
+    "分身租赁 + TDPO 锁定演示",
+  ],
+  "phase-2": [
+    "AFC 主网 (PoUE + PoRC)",
+    "认知状态迁移桥",
+    "无损 CDS SBT 迁移",
+    "10,000 TPS 压力测试",
+  ],
+  "phase-3": [
+    "全球 IoT 设备接入",
+    "Rent-a-Human 物理执行者网络",
+    "跨膜 $AFC ↔ 法币通道",
+    "罚没的 Ricardian 仲裁",
+  ],
+};
 
 // ============================================================
 // Types — API response shapes (BigInt-safe after parseFromJson)
@@ -207,6 +359,8 @@ function getAccent(mod: TestVectorModule) {
 // ============================================================
 export function TestsPanel() {
   const { toast } = useToast();
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   const [data, setData] = React.useState<ListResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [runningAll, setRunningAll] = React.useState(false);
@@ -225,21 +379,21 @@ export function TestsPanel() {
         setData(parseFromJson(json.data));
       } else {
         toast({
-          title: "Failed to load test vectors",
-          description: json.error ?? "Unknown error",
+          title: lang === "zh" ? "加载测试向量失败" : "Failed to load test vectors",
+          description: json.error ?? (lang === "zh" ? "未知错误" : "Unknown error"),
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, lang]);
 
   React.useEffect(() => {
     loadList();
@@ -265,26 +419,26 @@ export function TestsPanel() {
           setResults((prev) => ({ ...prev, [vectorId]: result }));
           if (result.passed) {
             toast({
-              title: `${vectorId} PASSED`,
+              title: `${vectorId} ${lang === "zh" ? "通过" : "PASSED"}`,
               description: result.rfcCase,
             });
           } else {
             toast({
-              title: `${vectorId} FAILED`,
-              description: result.errorMessage ?? "Assertion failed",
+              title: `${vectorId} ${lang === "zh" ? "失败" : "FAILED"}`,
+              description: result.errorMessage ?? (lang === "zh" ? "断言失败" : "Assertion failed"),
               variant: "destructive",
             });
           }
         } else {
           toast({
-            title: `${vectorId} run failed`,
-            description: json.error ?? "Unknown error",
+            title: lang === "zh" ? `${vectorId} 运行失败` : `${vectorId} run failed`,
+            description: json.error ?? (lang === "zh" ? "未知错误" : "Unknown error"),
             variant: "destructive",
           });
         }
       } catch (e) {
         toast({
-          title: `${vectorId} network error`,
+          title: lang === "zh" ? `${vectorId} 网络错误` : `${vectorId} network error`,
           description: (e as Error).message,
           variant: "destructive",
         });
@@ -298,7 +452,7 @@ export function TestsPanel() {
         loadList();
       }
     },
-    [toast, loadList],
+    [toast, loadList, lang],
   );
 
   // ----- Run all 10 vectors sequentially -----
@@ -310,21 +464,24 @@ export function TestsPanel() {
         await runVector(v.id);
       }
       toast({
-        title: "All vectors executed",
-        description: "10 RFC test vectors run complete — see results below.",
+        title: lang === "zh" ? "全部向量已执行" : "All vectors executed",
+        description:
+          lang === "zh"
+            ? "10 个 RFC 测试向量运行完成 — 查看下方结果。"
+            : "10 RFC test vectors run complete — see results below.",
       });
     } finally {
       setRunningAll(false);
     }
-  }, [runVector, toast]);
+  }, [runVector, toast, lang]);
 
   return (
     <div>
       <PanelHeader
         icon={FlaskConical}
-        title="Test Vectors & PoUE/PoRC Consensus"
+        title={t("tests.title")}
         rfcSection="RFC §三 / §4.2"
-        description="RFC test vector runner (10 vectors across all 6 modules) + AFC chain consensus visualization (PoUE admission + PoRC block production)."
+        description={t("tests.description")}
         accent="cyan"
         actions={
           <Button
@@ -337,7 +494,7 @@ export function TestsPanel() {
             <RefreshCw
               className={cn("h-3.5 w-3.5", loading && "animate-spin")}
             />
-            Refresh
+            {t("header.refresh")}
           </Button>
         }
       />
@@ -346,11 +503,11 @@ export function TestsPanel() {
         <TabsList className="font-mono text-xs">
           <TabsTrigger value="vectors" className="gap-1.5">
             <FlaskConical className="h-3.5 w-3.5" />
-            Test Vectors
+            {t("tests.tabVectors")}
           </TabsTrigger>
           <TabsTrigger value="consensus" className="gap-1.5">
             <Layers className="h-3.5 w-3.5" />
-            PoUE / PoRC Consensus
+            {t("tests.tabConsensus")}
           </TabsTrigger>
         </TabsList>
 
@@ -361,29 +518,29 @@ export function TestsPanel() {
           {/* Stats row + Run All button */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Stat
-              label="Total Vectors"
+              label={t("tests.totalVectors")}
               value={data?.stats.totalVectors ?? 10}
               hint="RFC §三 + §5.2 §四"
               accent="cyan"
             />
             <Stat
-              label="Passed"
+              label={t("tests.passed")}
               value={
                 data ? countRecentPassed(data, results) : "—"
               }
-              hint="Latest run per vector"
+              hint={t("tests.latestRunPerVector")}
               accent="emerald"
             />
             <Stat
-              label="Failed"
+              label={t("tests.failed")}
               value={data ? countRecentFailed(data, results) : "—"}
-              hint="Latest run per vector"
+              hint={t("tests.latestRunPerVector")}
               accent="rose"
             />
             <Stat
-              label="History Rows"
+              label={t("tests.historyRows")}
               value={data?.stats.totalRuns ?? 0}
-              hint="Persisted test runs"
+              hint={t("tests.persistedRuns")}
               accent="violet"
             />
           </div>
@@ -399,10 +556,10 @@ export function TestsPanel() {
               ) : (
                 <PlayCircle className="h-4 w-4" />
               )}
-              {runningAll ? "Running All…" : "Run All Vectors"}
+              {runningAll ? t("tests.runningAll") : t("tests.runAllVectors")}
             </Button>
             <span className="font-mono text-[11px] text-muted-foreground">
-              Each vector runs the live contract logic deterministically — no DB writes during the test.
+              {t("tests.vectorRunHint")}
             </span>
           </div>
 
@@ -431,11 +588,11 @@ export function TestsPanel() {
 
           {/* History table */}
           <PanelCard
-            title="Run History (latest 50)"
+            title={t("tests.runHistoryLatest")}
             icon={Clock}
             action={
               <Badge variant="outline" className="font-mono text-[10px]">
-                {data?.history.length ?? 0} rows
+                {data?.history.length ?? 0} {t("tests.rows")}
               </Badge>
             }
           >
@@ -444,19 +601,19 @@ export function TestsPanel() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="font-mono text-[10px] uppercase">
-                      Vector
+                      {t("tests.colVector")}
                     </TableHead>
                     <TableHead className="font-mono text-[10px] uppercase">
-                      Module
+                      {t("tests.colModule")}
                     </TableHead>
                     <TableHead className="font-mono text-[10px] uppercase">
-                      Result
+                      {t("tests.colResult")}
                     </TableHead>
                     <TableHead className="font-mono text-[10px] uppercase">
-                      Error
+                      {t("tests.colError")}
                     </TableHead>
                     <TableHead className="font-mono text-[10px] uppercase">
-                      Executed
+                      {t("tests.colExecuted")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -467,7 +624,7 @@ export function TestsPanel() {
                         colSpan={5}
                         className="text-center text-xs text-muted-foreground py-8 font-mono"
                       >
-                        No test runs yet — click “Run All Vectors” above to execute the RFC suite.
+                        {t("tests.noRuns")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -494,11 +651,11 @@ export function TestsPanel() {
                       <TableCell>
                         {row.passed ? (
                           <span className="inline-flex items-center gap-1 font-mono text-xs text-emerald-600 dark:text-emerald-400">
-                            <CheckCircle2 className="h-3.5 w-3.5" /> PASSED
+                            <CheckCircle2 className="h-3.5 w-3.5" /> {t("tests.passed")}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 font-mono text-xs text-rose-600 dark:text-rose-400">
-                            <XCircle className="h-3.5 w-3.5" /> FAILED
+                            <XCircle className="h-3.5 w-3.5" /> {t("tests.failed")}
                           </span>
                         )}
                       </TableCell>
@@ -524,49 +681,46 @@ export function TestsPanel() {
         <TabsContent value="consensus" className="space-y-6">
           {/* AFC Chain specs */}
           <PanelCard
-            title="AFC Chain Specifications"
+            title={t("tests.chainSpecs")}
             icon={Zap}
           >
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <SpecTile label="Consensus" value={AFC_CHAIN_SPECS.consensus} icon={ShieldCheck} accent="emerald" />
-              <SpecTile label="TPS" value={AFC_CHAIN_SPECS.tps} icon={Zap} accent="cyan" />
-              <SpecTile label="Block Time" value={AFC_CHAIN_SPECS.blockTime} icon={Clock} accent="amber" />
-              <SpecTile label="Native Token" value={AFC_CHAIN_SPECS.nativeToken} icon={Coins} accent="violet" />
-              <SpecTile label="Coprocessor" value={AFC_CHAIN_SPECS.coprocessor} icon={Cpu} accent="cyan" />
-              <SpecTile label="Storage" value={AFC_CHAIN_SPECS.storage} icon={Database} accent="emerald" />
-              <SpecTile label="Finality" value={AFC_CHAIN_SPECS.finality} icon={CheckCircle2} accent="amber" />
-              <SpecTile label="Sybil Resistance" value={AFC_CHAIN_SPECS.sybilResistance} icon={Fingerprint} accent="rose" />
+              <SpecTile label={t("tests.consensusLabel")} value={AFC_CHAIN_SPECS.consensus} icon={ShieldCheck} accent="emerald" />
+              <SpecTile label={t("tests.tps")} value={AFC_CHAIN_SPECS.tps} icon={Zap} accent="cyan" />
+              <SpecTile label={t("tests.blockTime")} value={AFC_CHAIN_SPECS.blockTime} icon={Clock} accent="amber" />
+              <SpecTile label={t("tests.nativeToken")} value={AFC_CHAIN_SPECS.nativeToken} icon={Coins} accent="violet" />
+              <SpecTile label={t("tests.coprocessorLabel")} value={AFC_CHAIN_SPECS.coprocessor} icon={Cpu} accent="cyan" />
+              <SpecTile label={t("tests.storage")} value={AFC_CHAIN_SPECS.storage} icon={Database} accent="emerald" />
+              <SpecTile label={t("tests.finality")} value={AFC_CHAIN_SPECS.finality} icon={CheckCircle2} accent="amber" />
+              <SpecTile label={t("tests.sybilResistance")} value={AFC_CHAIN_SPECS.sybilResistance} icon={Fingerprint} accent="rose" />
             </div>
           </PanelCard>
 
           {/* PoUE + PoRC two-column flow */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <ConsensusFlowCard
-              title="PoUE — Proof of Unique Entity"
-              subtitle="Admission Gate (RFC §4.2)"
+              title={t("tests.poueFullTitle")}
+              subtitle={t("tests.admissionGate")}
               steps={PoUE_STEPS}
               accent="emerald"
-              tag="准入共识"
+              tag={t("tests.admission")}
             />
             <ConsensusFlowCard
-              title="PoRC — Proof of Resonant Cognition"
-              subtitle="Block Production (RFC §4.2)"
+              title={t("tests.porcFullTitle")}
+              subtitle={t("tests.blockProductionGate")}
               steps={PoRC_STEPS}
               accent="cyan"
-              tag="出块共识"
+              tag={t("tests.blockProduction")}
             />
           </div>
 
           {/* Cognitive Coprocessor */}
           <PanelCard
-            title="Cognitive Coprocessor Stack"
+            title={t("tests.coprocessorStack")}
             icon={BrainCircuit}
           >
             <p className="mb-4 text-xs text-muted-foreground">
-              The AFC chain doesn’t verify raw biometric or cognitive data on-chain.
-              Instead, a <span className="font-mono text-cyan-600 dark:text-cyan-400">Cognitive Coprocessor</span> stack
-              runs the heavy ML / privacy primitives off-chain, producing succinct ZK proofs
-              that the chain verifies in O(1).
+              {t("tests.coprocessorDesc")}
             </p>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {COGNITIVE_COPROCESSOR.map((layer) => (
@@ -584,14 +738,10 @@ export function TestsPanel() {
           <Alert className="border-cyan-500/30 bg-cyan-500/5">
             <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
             <AlertTitle className="font-mono text-xs text-cyan-600 dark:text-cyan-400">
-              RFC §4.2 — A cognition-driven, entity-unique chain
+              {t("tests.rfcAlertTitle")}
             </AlertTitle>
             <AlertDescription className="text-xs text-muted-foreground">
-              PoUE ensures every participating avatar is a unique living digital entity (Sybil resistance).
-              PoRC replaces hash-power / stake with cognitive-value contribution: the avatar whose shard
-              delivers the most entropy reduction in a round earns the next block. Combined with the
-              Cognitive Coprocessor (TEE + ZK-ML + native graph storage), AFC chain achieves 10,000+ TPS
-              while keeping biometric and cognitive data private.
+              {t("tests.rfcAlertDesc")}
             </AlertDescription>
           </Alert>
         </TabsContent>
@@ -658,6 +808,8 @@ function TestVectorCard({
   onRun: () => void;
 }) {
   const accent = getAccent(vector.module);
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   const hasScenario = (metadata?.scenarioCount ?? vector.scenarios?.length ?? 0) > 0;
 
   // The "current" result is the live one (results[v.id]) if present,
@@ -701,7 +853,7 @@ function TestVectorCard({
                 variant="outline"
                 className="font-mono text-[10px] text-amber-600 dark:text-amber-400 border-amber-500/30"
               >
-                {vector.scenarios?.length ?? 0} scenarios
+                {vector.scenarios?.length ?? 0} {t("tests.scenarios")}
               </Badge>
             )}
           </div>
@@ -710,7 +862,7 @@ function TestVectorCard({
 
         {/* Title + RFC ref */}
         <h3 className="mt-3 font-mono text-sm font-bold leading-tight">
-          {vector.title}
+          {lang === "zh" ? (VECTOR_TITLES_ZH[vector.id] ?? vector.title) : vector.title}
         </h3>
         <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
           {vector.rfcRef}
@@ -718,13 +870,13 @@ function TestVectorCard({
 
         {/* Description */}
         <p className="mt-2 text-xs text-muted-foreground line-clamp-3">
-          {vector.description}
+          {lang === "zh" ? (VECTOR_DESCS_ZH[vector.id] ?? vector.description) : vector.description}
         </p>
 
         {/* Expected outcome */}
         <div className="mt-3 flex items-center gap-2">
           <span className="font-mono text-[10px] uppercase text-muted-foreground">
-            Expected:
+            {t("tests.expectedLabel")}:
           </span>
           <Badge
             variant="outline"
@@ -754,7 +906,7 @@ function TestVectorCard({
             ) : (
               <Play className="h-3.5 w-3.5" />
             )}
-            {running ? "Running…" : "Run"}
+            {running ? (lang === "zh" ? "运行中…" : "Running…") : t("common.run")}
           </Button>
           {vector.apiEndpoint && (
             <span className="font-mono text-[10px] text-muted-foreground">
@@ -798,7 +950,7 @@ function TestVectorCard({
                           )}
                         </div>
                         <p className="mt-0.5 text-[11px] text-muted-foreground">
-                          {s.label}
+                          {lang === "zh" ? (SCENARIO_LABELS_ZH[s.scenarioId] ?? s.label) : s.label}
                         </p>
                         {!s.passed && s.errorMessage && (
                           <p className="mt-1 font-mono text-[10px] text-rose-600 dark:text-rose-400">
@@ -818,7 +970,7 @@ function TestVectorCard({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-[10px] uppercase text-muted-foreground">
-                      Actual:
+                      {t("tests.actualLabel")}:
                     </span>
                     <Badge
                       className={cn(
@@ -828,7 +980,7 @@ function TestVectorCard({
                           : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30",
                       )}
                     >
-                      {liveResult.passed ? "PASS" : "FAIL"}
+                      {liveResult.passed ? t("tests.pass") : t("tests.fail")}
                     </Badge>
                   </div>
                   {liveResult.errorMessage && (
@@ -920,6 +1072,8 @@ function ConsensusFlowCard({
   tag: string;
 }) {
   const a = ACCENT_CLASSES[accent];
+  const t = useT();
+  const lang = useLang((s) => s.lang);
   return (
     <Card className={cn("border-border/60", a.border)}>
       <CardHeader className="pb-3">
@@ -977,14 +1131,14 @@ function ConsensusFlowCard({
                           a.text,
                         )}
                       >
-                        STEP {idx + 1}
+                        {t("tests.step")} {idx + 1}
                       </span>
                       <span className="font-mono text-xs font-bold text-foreground">
-                        {step.name}
+                        {lang === "zh" ? (STEP_NAMES_ZH[step.id] ?? step.name) : step.name}
                       </span>
                     </div>
                     <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-                      {step.description}
+                      {lang === "zh" ? (STEP_DESCS_ZH[step.id] ?? step.description) : step.description}
                     </p>
                   </div>
                 </motion.li>
@@ -1002,6 +1156,7 @@ function ConsensusFlowCard({
 // ============================================================
 function CoprocessorCard({ layer }: { layer: CoprocessorLayer }) {
   const Icon = ICON_MAP[layer.icon] ?? Cpu;
+  const lang = useLang((s) => s.lang);
   return (
     <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-3">
       <div className="flex items-center gap-2">
@@ -1009,11 +1164,11 @@ function CoprocessorCard({ layer }: { layer: CoprocessorLayer }) {
           <Icon className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
         </div>
         <span className="font-mono text-xs font-bold text-cyan-600 dark:text-cyan-400">
-          {layer.name}
+          {lang === "zh" ? (COPROCESSOR_NAMES_ZH[layer.id] ?? layer.name) : layer.name}
         </span>
       </div>
       <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-        {layer.description}
+        {lang === "zh" ? (COPROCESSOR_DESCS_ZH[layer.id] ?? layer.description) : layer.description}
       </p>
     </div>
   );
@@ -1025,14 +1180,17 @@ function CoprocessorCard({ layer }: { layer: CoprocessorLayer }) {
 function CPDFCalculator() {
   const [qEce, setQEce] = React.useState(8000);
   const [similarity, setSimilarity] = React.useState(0.65);
+  const t = useT();
+  const lang = useLang((s) => s.lang);
 
   const result = COMPUTE_CPDF_WEIGHT(qEce, similarity);
   const isBlackHole = result.isBlackHole;
   const qNorm = qEce / 10000;
+  const whereWord = t("tests.where");
 
   return (
     <PanelCard
-      title="CPDF Calculator — Cognitive Purity Decay Function"
+      title={t("tests.cpdfFullTitle")}
       icon={Calculator}
       action={
         <Badge
@@ -1044,7 +1202,7 @@ function CPDFCalculator() {
               : "border-emerald-500/40 text-emerald-600 dark:text-emerald-400",
           )}
         >
-          {isBlackHole ? "BLACK HOLE" : "VALID"}
+          {isBlackHole ? t("tests.blackHole") : t("tests.valid")}
         </Badge>
       }
     >
@@ -1055,7 +1213,7 @@ function CPDFCalculator() {
             <div className="flex items-center justify-between mb-2">
               <Label className="font-mono text-xs">
                 <Hash className="h-3 w-3 inline mr-1" />
-                Q_ece Score
+                {t("tests.qeceScore")}
               </Label>
               <span className="font-mono text-sm font-bold text-cyan-600 dark:text-cyan-400">
                 {qEce} / 10000
@@ -1069,7 +1227,7 @@ function CPDFCalculator() {
               onValueChange={(v) => setQEce(v[0] ?? 0)}
             />
             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-              Normalized Q = {qNorm.toFixed(4)}
+              {t("tests.normalizedQ")} = {qNorm.toFixed(4)}
             </p>
           </div>
 
@@ -1077,7 +1235,7 @@ function CPDFCalculator() {
             <div className="flex items-center justify-between mb-2">
               <Label className="font-mono text-xs">
                 <Network className="h-3 w-3 inline mr-1" />
-                Similarity to Anchor
+                {t("tests.similarity")}
               </Label>
               <span
                 className={cn(
@@ -1098,7 +1256,7 @@ function CPDFCalculator() {
               onValueChange={(v) => setSimilarity(v[0] ?? 0)}
             />
             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-              Floor = 0.30 (below = black hole)
+              {t("tests.similarityFloor")}
             </p>
           </div>
 
@@ -1120,8 +1278,12 @@ function CPDFCalculator() {
             />
             <AlertDescription className="font-mono text-[11px]">
               {isBlackHole
-                ? `BLACK HOLE: similarity ${similarity.toFixed(2)} < 0.30 floor → weight crushed to 0. Shard excluded from lineage.`
-                : `Valid shard: weight = 1.0 × ${similarity.toFixed(2)} × e^(-2 × (1 - ${qNorm.toFixed(4)})) = ${result.finalWeight.toFixed(6)}`}
+                ? (lang === "zh"
+                    ? `黑洞: 相似度 ${similarity.toFixed(2)} < 0.30 下限 → 权重压至 0。分片排除在谱系之外。`
+                    : `BLACK HOLE: similarity ${similarity.toFixed(2)} < 0.30 floor → weight crushed to 0. Shard excluded from lineage.`)
+                : (lang === "zh"
+                    ? `有效分片: 权重 = 1.0 × ${similarity.toFixed(2)} × e^(-2 × (1 - ${qNorm.toFixed(4)})) = ${result.finalWeight.toFixed(6)}`
+                    : `Valid shard: weight = 1.0 × ${similarity.toFixed(2)} × e^(-2 × (1 - ${qNorm.toFixed(4)})) = ${result.finalWeight.toFixed(6)}`)}
             </AlertDescription>
           </Alert>
         </div>
@@ -1129,12 +1291,12 @@ function CPDFCalculator() {
         {/* Live formula + result */}
         <div className="rounded-lg border border-border/60 bg-card/50 p-4">
           <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            CPDF Formula
+            {t("tests.cpdfFormula")}
           </div>
           <pre className="mt-2 font-mono text-xs leading-relaxed text-foreground whitespace-pre-wrap">
 {`W = W_base × similarity × e^(-λ(1 - Q_ece))
 
-where:
+${whereWord}:
   W_base     = 1.0
   similarity = ${similarity.toFixed(4)}
   Q_ece      = ${qEce}/10000 = ${qNorm.toFixed(4)}
@@ -1150,7 +1312,7 @@ W = 1.0 × ${similarity.toFixed(4)} × ${result.decayFactor.toFixed(6)}
           <Separator className="my-3" />
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase text-muted-foreground">
-              Final Weight
+              {t("tests.finalWeight")}
             </span>
             <motion.span
               key={result.finalWeight.toFixed(4)}
@@ -1179,14 +1341,14 @@ W = 1.0 × ${similarity.toFixed(4)} × ${result.decayFactor.toFixed(6)}
 // Sub-component: PhaseRoadmap
 // ============================================================
 function PhaseRoadmap() {
+  const t = useT();
   return (
     <PanelCard
-      title="Phase Roadmap — RFC §6"
+      title={t("tests.phaseRoadmapRfc")}
       icon={Rocket}
     >
       <p className="mb-4 text-xs text-muted-foreground">
-        Three-phase AP2 evolution: Base-chain MVP → AFC mainnet with PoUE+PoRC
-        consensus → full Phygital symbiosis with global IoT integration.
+        {t("tests.phaseRoadmapDesc")}
       </p>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {ROADMAP_PHASES.map((phase, idx) => (
@@ -1206,6 +1368,9 @@ function PhaseCard({
 }) {
   const a = ACCENT_CLASSES[phase.accent];
   const Icon = ICON_MAP[phase.icon] ?? Rocket;
+  const t = useT();
+  const lang = useLang((s) => s.lang);
+  const milestones = lang === "zh" ? (PHASE_MILESTONES_ZH[phase.id] ?? phase.milestones) : phase.milestones;
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -1237,7 +1402,7 @@ function PhaseCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className={cn("font-mono text-[10px] uppercase", a.text)}>
-              {phase.phase}
+              {lang === "zh" ? (PHASE_LABELS_ZH[phase.id] ?? phase.phase) : phase.phase}
             </span>
             <Badge
               variant="outline"
@@ -1248,24 +1413,24 @@ function PhaseCard({
                   : "border-muted-foreground/40 text-muted-foreground",
               )}
             >
-              {phase.status === "active" ? "● Active" : "Planned"}
+              {phase.status === "active" ? t("tests.active") : t("tests.planned")}
             </Badge>
           </div>
           <h4 className="font-mono text-xs font-bold text-foreground mt-0.5">
-            {phase.title}
+            {lang === "zh" ? (PHASE_TITLES_ZH[phase.id] ?? phase.title) : phase.title}
           </h4>
           <p className="font-mono text-[10px] text-muted-foreground">
-            {phase.duration}
+            {lang === "zh" ? (PHASE_DURATIONS_ZH[phase.id] ?? phase.duration) : phase.duration}
           </p>
         </div>
       </div>
 
       <p className="text-[11px] leading-snug text-muted-foreground mb-3">
-        {phase.description}
+        {lang === "zh" ? (PHASE_DESCS_ZH[phase.id] ?? phase.description) : phase.description}
       </p>
 
       <ul className="space-y-1">
-        {phase.milestones.map((m) => (
+        {milestones.map((m) => (
           <li
             key={m}
             className="flex items-start gap-1.5 font-mono text-[10px] text-muted-foreground"

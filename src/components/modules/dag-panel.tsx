@@ -52,6 +52,7 @@ import {
   type DAGNode,
   type DAGEdge,
 } from "@/lib/types";
+import { useT, useLang } from "@/lib/i18n";
 
 // ============================================================
 // Local types — mirror API responses (BigInt-safe after parseFromJson)
@@ -185,12 +186,13 @@ function DagGraph({
   selectedNodeId,
   onSelectNode,
 }: DagGraphProps) {
+  const t = useT();
   if (nodes.length === 0) {
     return (
       <div className="flex h-[360px] items-center justify-center text-center text-muted-foreground font-mono text-xs">
         <div>
           <Network className="h-10 w-10 mx-auto mb-2 opacity-40" />
-          No DAG nodes — create a core anchor to begin
+          {t("dag.noNodesHint")}
         </div>
       </div>
     );
@@ -281,7 +283,7 @@ function DagGraph({
               className="fill-white font-mono"
               style={{ fontSize: 9, fontWeight: 700 }}
             >
-              ANCHOR
+              {t("dag.anchorLabel")}
             </text>
           </motion.g>
         )}
@@ -356,25 +358,25 @@ function DagGraph({
             className="inline-block h-2.5 w-2.5 rounded-full"
             style={{ background: COLORS.emerald }}
           />
-          Healthy
+          {t("dag.legendHealthy")}
         </span>
         <span className="flex items-center gap-1">
           <span
             className="inline-block h-2.5 w-2.5 rounded-full"
             style={{ background: COLORS.amber }}
           />
-          Diluted
+          {t("dag.legendDiluted")}
         </span>
         <span className="flex items-center gap-1">
           <span
             className="inline-block h-2.5 w-2.5 rounded-full"
             style={{ background: COLORS.rose }}
           />
-          Black-Hole ✕
+          {t("dag.legendBlackHole")}
         </span>
         <span className="flex items-center gap-1">
           <Circle className="h-2.5 w-2.5" style={{ color: COLORS.emerald }} />
-          Core Anchor
+          {t("dag.legendCoreAnchor")}
         </span>
       </div>
     </div>
@@ -392,10 +394,11 @@ function NodeBreakdown({
   node: DAGNode | null;
   avatar: AvatarLite | undefined;
 }) {
+  const t = useT();
   if (!node) {
     return (
       <div className="rounded-md border border-dashed border-border/60 p-4 text-center text-muted-foreground font-mono text-xs">
-        Click a node to inspect its CPDF breakdown
+        {t("dag.clickNodeHint")}
       </div>
     );
   }
@@ -422,7 +425,7 @@ function NodeBreakdown({
                 : "border-cyan-500/40 text-cyan-600 dark:text-cyan-400 font-mono text-[10px]"
             }
           >
-            {node.isCoreAnchor ? "CORE ANCHOR" : "FUSED SHARD"}
+            {node.isCoreAnchor ? t("dag.coreAnchorBadge") : t("dag.fusedShardBadge")}
           </Badge>
           <span className="font-mono text-[11px] text-muted-foreground">
             {shortHash(node.id, 6, 4)}
@@ -439,21 +442,21 @@ function NodeBreakdown({
           }
         >
           {tier === "blackhole"
-            ? "BLACK HOLE"
+            ? t("dag.blackHoleBadge")
             : tier === "healthy"
-              ? "HEALTHY"
-              : "DILUTED"}
+              ? t("dag.healthyBadge")
+              : t("dag.dilutedBadge")}
         </Badge>
       </div>
 
       <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 font-mono text-[11px]">
-        <Row label="Owner" value={avatar?.name ?? "—"} />
+        <Row label={t("dag.owner")} value={avatar?.name ?? "—"} />
         <Row label="shardHash" value={shortHash(node.shardHash)} />
         <Row label="Q_ece" value={`${node.eceQualityScore} / 10000`} />
-        <Row label="Similarity" value={node.similarityToAnchor.toFixed(3)} />
-        <Row label="Decay e^(-λ(1-Q))" value={breakdown.decayFactor.toFixed(4)} />
+        <Row label={t("dag.similarityShort")} value={node.similarityToAnchor.toFixed(3)} />
+        <Row label={t("dag.decayLabel")} value={breakdown.decayFactor.toFixed(4)} />
         <Row
-          label="Edge Weight"
+          label={t("dag.edgeWeight")}
           value={
             <span
               className={
@@ -493,11 +496,12 @@ function Row({
 // ============================================================
 
 function CpdfExplainer() {
+  const t = useT();
   return (
     <div className="space-y-3 text-xs">
       <div className="rounded-md border border-cyan-500/30 bg-cyan-500/5 p-3 font-mono text-center">
         <div className="text-[10px] text-muted-foreground mb-1">
-          Cognitive Purity Decay Function
+          {t("dag.cpdfFn")}
         </div>
         <div className="text-cyan-600 dark:text-cyan-400 text-sm font-bold">
           W = W
@@ -512,18 +516,18 @@ function CpdfExplainer() {
       <div className="space-y-2">
         <Case
           color="emerald"
-          title="High-Quality Fusion"
-          desc="sim ≥ 0.30 + high Q_ece → weight ≈ similarity. e.g. 先知融合数学天才."
+          title={t("dag.highQualityFusion")}
+          desc={t("dag.highQualityFusionDesc")}
         />
         <Case
           color="amber"
-          title="Low-Quality Dilution"
-          desc="sim ≥ 0.30 but low Q_ece → exponential decay crushes weight toward 0."
+          title={t("dag.lowQualityDilution")}
+          desc={t("dag.lowQualityDilutionDesc")}
         />
         <Case
           color="rose"
-          title="Black Hole (Crushed)"
-          desc="sim &lt; 0.30 → weight = 0. The shard contributes nothing to lineage."
+          title={t("dag.blackHoleCrushed")}
+          desc={t("dag.blackHoleCrushedDesc")}
         />
       </div>
     </div>
@@ -560,6 +564,8 @@ function Case({
 
 export function DagPanel() {
   const { toast } = useToast();
+  const t = useT();
+  const lang = useLang((s) => s.lang);
 
   // List state
   const [entities, setEntities] = React.useState<Record<string, EntityGraph>>(
@@ -607,14 +613,14 @@ export function DagPanel() {
         setAvatars(data.avatars);
       } else {
         toast({
-          title: "Fetch failed",
+          title: useLang.getState().lang === "zh" ? "拉取失败" : "Fetch failed",
           description: json.error,
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Network error",
+        title: useLang.getState().lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -710,7 +716,7 @@ export function DagPanel() {
       const json = await res.json();
       if (!json.ok) {
         toast({
-          title: "Create anchor failed",
+          title: lang === "zh" ? "创建锚点失败" : "Create anchor failed",
           description: json.error,
           variant: "destructive",
         });
@@ -719,7 +725,7 @@ export function DagPanel() {
       return true;
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -748,7 +754,7 @@ export function DagPanel() {
       const json = await res.json();
       if (!json.ok) {
         toast({
-          title: "Fuse shard failed",
+          title: lang === "zh" ? "融合分片失败" : "Fuse shard failed",
           description: json.error,
           variant: "destructive",
         });
@@ -757,7 +763,7 @@ export function DagPanel() {
       return true;
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -768,8 +774,10 @@ export function DagPanel() {
   async function handleFuseSubmit() {
     if (!fuseEntityId || !fuseOwnerAvatarId) {
       toast({
-        title: "Missing fields",
-        description: "Entity and owner avatar are required",
+        title: lang === "zh" ? "字段缺失" : "Missing fields",
+        description: lang === "zh"
+          ? "需要实体和所有者分身"
+          : "Entity and owner avatar are required",
         variant: "destructive",
       });
       return;
@@ -791,8 +799,10 @@ export function DagPanel() {
     );
     if (ok) {
       toast({
-        title: "Shard fused",
-        description: `CPDF weight computed · Q_ece=${fuseQEce} · sim=${fuseSim.toFixed(2)}`,
+        title: lang === "zh" ? "分片已融合" : "Shard fused",
+        description: lang === "zh"
+          ? `CPDF 权重已计算 · Q_ece=${fuseQEce} · sim=${fuseSim.toFixed(2)}`
+          : `CPDF weight computed · Q_ece=${fuseQEce} · sim=${fuseSim.toFixed(2)}`,
       });
       setFuseShardHash("");
       await fetchAll();
@@ -804,7 +814,7 @@ export function DagPanel() {
   async function handleComputeSplit() {
     if (!splitEntityId) {
       toast({
-        title: "Select an entity first",
+        title: lang === "zh" ? "请先选择实体" : "Select an entity first",
         variant: "destructive",
       });
       return;
@@ -824,19 +834,21 @@ export function DagPanel() {
         const shares = parseFromJson<LineageSplitShareBig[]>(json.data);
         setSplitShares(shares);
         toast({
-          title: "Split computed",
-          description: `${shares.length} avatars · total ${splitAmount} $AFC`,
+          title: lang === "zh" ? "分账已计算" : "Split computed",
+          description: lang === "zh"
+            ? `${shares.length} 个分身 · 总计 ${splitAmount} $AFC`
+            : `${shares.length} avatars · total ${splitAmount} $AFC`,
         });
       } else {
         toast({
-          title: "Split failed",
+          title: lang === "zh" ? "分账失败" : "Split failed",
           description: json.error,
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -848,7 +860,7 @@ export function DagPanel() {
   async function handleScan() {
     if (!scanEntityId) {
       toast({
-        title: "Select an entity first",
+        title: lang === "zh" ? "请先选择实体" : "Select an entity first",
         variant: "destructive",
       });
       return;
@@ -865,22 +877,26 @@ export function DagPanel() {
         const result = parseFromJson<MoneyLaunderingResult>(json.data);
         setScanResult(result);
         toast({
-          title: result.suspicious ? "Suspicious!" : "Clean",
+          title: result.suspicious
+            ? lang === "zh" ? "可疑!" : "Suspicious!"
+            : lang === "zh" ? "无嫌疑" : "Clean",
           description: result.suspicious
             ? result.reason
-            : "No laundering pattern detected",
+            : lang === "zh"
+              ? "未检测到洗钱模式"
+              : "No laundering pattern detected",
           variant: result.suspicious ? "destructive" : "default",
         });
       } else {
         toast({
-          title: "Scan failed",
+          title: lang === "zh" ? "扫描失败" : "Scan failed",
           description: json.error,
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Network error",
+        title: lang === "zh" ? "网络错误" : "Network error",
         description: (e as Error).message,
         variant: "destructive",
       });
@@ -896,8 +912,10 @@ export function DagPanel() {
     const genius = findGenius();
     if (!prophet || !genius) {
       toast({
-        title: "Avatars missing",
-        description: "Need a prophet and a genius avatar (run /api/seed first)",
+        title: lang === "zh" ? "缺少分身" : "Avatars missing",
+        description: lang === "zh"
+          ? "需要先知和天才分身 (请先运行 /api/seed)"
+          : "Need a prophet and a genius avatar (run /api/seed first)",
         variant: "destructive",
       });
       setLoading(false);
@@ -917,8 +935,10 @@ export function DagPanel() {
       setSplitEntityId(entityId);
       setScanEntityId(entityId);
       toast({
-        title: "Healthy fusion preset loaded",
-        description: "Prophet + Math Genius · Q=8500 sim=0.85",
+        title: lang === "zh" ? "健康融合预设已加载" : "Healthy fusion preset loaded",
+        description: lang === "zh"
+          ? "先知 + 数学天才 · Q=8500 sim=0.85"
+          : "Prophet + Math Genius · Q=8500 sim=0.85",
       });
     }
     setLoading(false);
@@ -930,8 +950,10 @@ export function DagPanel() {
     const army = findWaterArmy();
     if (!prophet || !army) {
       toast({
-        title: "Avatars missing",
-        description: "Need a prophet and a water-army avatar",
+        title: lang === "zh" ? "缺少分身" : "Avatars missing",
+        description: lang === "zh"
+          ? "需要先知和水军分身"
+          : "Need a prophet and a water-army avatar",
         variant: "destructive",
       });
       setLoading(false);
@@ -958,8 +980,10 @@ export function DagPanel() {
       setSplitEntityId(entityId);
       setScanEntityId(entityId);
       toast({
-        title: "Laundering preset loaded",
-        description: "12 black-holed shards · scan to detect",
+        title: lang === "zh" ? "洗钱预设已加载" : "Laundering preset loaded",
+        description: lang === "zh"
+          ? "12 个黑洞化分片 · 扫描以检测"
+          : "12 black-holed shards · scan to detect",
         variant: "destructive",
       });
     }
@@ -972,8 +996,10 @@ export function DagPanel() {
     const genius = findGenius();
     if (!prophet || !genius) {
       toast({
-        title: "Avatars missing",
-        description: "Need a prophet and a genius avatar",
+        title: lang === "zh" ? "缺少分身" : "Avatars missing",
+        description: lang === "zh"
+          ? "需要先知和天才分身"
+          : "Need a prophet and a genius avatar",
         variant: "destructive",
       });
       setLoading(false);
@@ -996,8 +1022,10 @@ export function DagPanel() {
       // Auto-compute split
       setSplitShares(null);
       toast({
-        title: "Lineage split demo loaded",
-        description: "Click 'Compute Split' with 10000 $AFC",
+        title: lang === "zh" ? "谱系分账演示已加载" : "Lineage split demo loaded",
+        description: lang === "zh"
+          ? "用 10000 $AFC 点击 '计算分账'"
+          : "Click 'Compute Split' with 10000 $AFC",
       });
     }
     setLoading(false);
@@ -1011,9 +1039,9 @@ export function DagPanel() {
     <div>
       <PanelHeader
         icon={Network}
-        title="CognitiveDAG + CPDF"
+        title={t("dag.title")}
         rfcSection="RFC §5.1 (CPDF)"
-        description="Cognitive lineage tracking · purity decay function · anti money-laundering · lineage-aware reward split"
+        description={t("dag.description")}
         accent="cyan"
         actions={
           <Button
@@ -1024,7 +1052,7 @@ export function DagPanel() {
             disabled={loading}
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-            Refresh
+            {t("header.refresh")}
           </Button>
         }
       />
@@ -1032,34 +1060,34 @@ export function DagPanel() {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Stat
-          label="Total Entities"
+          label={t("dag.totalEntities")}
           value={entityIds.length}
-          hint="cognitive DAGs"
+          hint={t("dag.cognitiveDagsHint")}
           accent="cyan"
         />
         <Stat
-          label="Total Shards"
+          label={t("dag.totalShards")}
           value={totalNodes}
-          hint={`${fusedShards.length} fused`}
+          hint={`${fusedShards.length} ${t("dag.fusedHint")}`}
           accent="emerald"
         />
         <Stat
-          label="Black-Holed"
+          label={t("dag.blackHoled")}
           value={blackHoledCount}
-          hint="weight crushed to 0"
+          hint={t("dag.weightCrushedHint")}
           accent="rose"
         />
         <Stat
-          label="Avg Purity"
+          label={t("dag.avgPurity")}
           value={`${avgPurity.toFixed(1)}%`}
-          hint="mean Q_ece of fused"
+          hint={t("dag.meanQeceHint")}
           accent="amber"
         />
       </div>
 
       {/* Preset scenario buttons */}
       <PanelCard
-        title="Preset Scenarios — One-Click Demos"
+        title={t("dag.presetScenarios")}
         icon={Sparkles}
         className="mb-6"
       >
@@ -1074,10 +1102,10 @@ export function DagPanel() {
               <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
               <div className="flex flex-col">
                 <span className="font-mono text-xs font-bold">
-                  Prophet + Math Genius
+                  {t("dag.prophetMathGenius")}
                 </span>
                 <span className="text-[10px] text-muted-foreground font-mono">
-                  Q=8500 · sim=0.85 → healthy weight
+                  {t("dag.healthyFusionDesc")}
                 </span>
               </div>
             </div>
@@ -1092,10 +1120,10 @@ export function DagPanel() {
               <AlertTriangle className="h-4 w-4 text-rose-500 mt-0.5 shrink-0" />
               <div className="flex flex-col">
                 <span className="font-mono text-xs font-bold">
-                  Prophet + Water Army
+                  {t("dag.prophetWaterArmy")}
                 </span>
                 <span className="text-[10px] text-muted-foreground font-mono">
-                  12× Q=500 · sim=0.15 → laundering
+                  {t("dag.launderingDesc")}
                 </span>
               </div>
             </div>
@@ -1110,10 +1138,10 @@ export function DagPanel() {
               <GitBranch className="h-4 w-4 text-cyan-500 mt-0.5 shrink-0" />
               <div className="flex flex-col">
                 <span className="font-mono text-xs font-bold">
-                  Lineage Split Demo
+                  {t("dag.lineageSplitDemo")}
                 </span>
                 <span className="text-[10px] text-muted-foreground font-mono">
-                  prophet 75% + genius 25% · 10000 $AFC
+                  {t("dag.splitDemoDesc")}
                 </span>
               </div>
             </div>
@@ -1127,7 +1155,7 @@ export function DagPanel() {
         <div className="space-y-4">
           {/* DAG Visualizer */}
           <PanelCard
-            title="Cognitive DAG Visualizer"
+            title={t("dag.dagVisualizer")}
             icon={Network}
             action={
               <Select
@@ -1138,12 +1166,12 @@ export function DagPanel() {
                 }}
               >
                 <SelectTrigger size="sm" className="font-mono text-[11px] w-[200px]">
-                  <SelectValue placeholder="Select entity" />
+                  <SelectValue placeholder={t("dag.selectEntity")} />
                 </SelectTrigger>
                 <SelectContent>
                   {entityIds.length === 0 ? (
                     <SelectItem value="__none" disabled>
-                      No entities yet
+                      {t("dag.noEntitiesYet")}
                     </SelectItem>
                   ) : (
                     entityIds.map((id) => (
@@ -1166,7 +1194,7 @@ export function DagPanel() {
                 />
               ) : (
                 <div className="h-[360px] flex items-center justify-center text-muted-foreground font-mono text-xs">
-                  No entity selected — run a preset or create an anchor
+                  {t("dag.noEntitySelectedHint")}
                 </div>
               )}
             </div>
@@ -1178,22 +1206,22 @@ export function DagPanel() {
           </PanelCard>
 
           {/* Fuse New Shard form */}
-          <PanelCard title="Fuse New Shard" icon={Plus}>
+          <PanelCard title={t("dag.fuseNewShard")} icon={Plus}>
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="font-mono text-[11px]">Entity</Label>
+                  <Label className="font-mono text-[11px]">{t("dag.entityLabel")}</Label>
                   <Select
                     value={fuseEntityId}
                     onValueChange={setFuseEntityId}
                   >
                     <SelectTrigger className="font-mono text-[11px] w-full">
-                      <SelectValue placeholder="Select entity" />
+                      <SelectValue placeholder={t("dag.selectEntity")} />
                     </SelectTrigger>
                     <SelectContent>
                       {entityIds.length === 0 ? (
                         <SelectItem value="__none" disabled>
-                          No entities yet
+                          {t("dag.noEntitiesYet")}
                         </SelectItem>
                       ) : (
                         entityIds.map((id) => (
@@ -1210,13 +1238,13 @@ export function DagPanel() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="font-mono text-[11px]">Owner Avatar</Label>
+                  <Label className="font-mono text-[11px]">{t("dag.ownerAvatar")}</Label>
                   <Select
                     value={fuseOwnerAvatarId}
                     onValueChange={setFuseOwnerAvatarId}
                   >
                     <SelectTrigger className="font-mono text-[11px] w-full">
-                      <SelectValue placeholder="Select avatar" />
+                      <SelectValue placeholder={t("common.selectAvatar")} />
                     </SelectTrigger>
                     <SelectContent>
                       {avatars.map((a) => (
@@ -1235,7 +1263,7 @@ export function DagPanel() {
 
               <div className="space-y-1.5">
                 <Label className="font-mono text-[11px]">
-                  shardHash (auto-generated, editable)
+                  {t("dag.shardHashEditable")}
                 </Label>
                 <div className="flex gap-2">
                   <Input
@@ -1251,7 +1279,7 @@ export function DagPanel() {
                     className="font-mono text-xs"
                     onClick={() => setFuseShardHash(randomShardHash())}
                   >
-                    Gen
+                    {t("dag.gen")}
                   </Button>
                 </div>
               </div>
@@ -1259,7 +1287,7 @@ export function DagPanel() {
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <Label className="font-mono text-[11px]">
-                    Q_ece (ECE Quality Score)
+                    {t("dag.qeceLabel")}
                   </Label>
                   <span className="font-mono text-[11px] text-cyan-600 dark:text-cyan-400">
                     {fuseQEce} ({((fuseQEce / 10000) * 100).toFixed(0)}%)
@@ -1277,7 +1305,7 @@ export function DagPanel() {
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <Label className="font-mono text-[11px]">
-                    Similarity to Anchor
+                    {t("dag.similarity")}
                   </Label>
                   <span className="font-mono text-[11px] text-cyan-600 dark:text-cyan-400">
                     {fuseSim.toFixed(2)}
@@ -1296,7 +1324,7 @@ export function DagPanel() {
               <div className="rounded-md border border-cyan-500/30 bg-cyan-500/5 p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-[11px] font-bold text-cyan-600 dark:text-cyan-400">
-                    Live CPDF Preview
+                    {t("dag.liveCpdfPreview")}
                   </span>
                   <Badge
                     variant="outline"
@@ -1309,10 +1337,10 @@ export function DagPanel() {
                     }
                   >
                     {livePreview.isBlackHole
-                      ? "BLACK HOLE ✕"
+                      ? t("dag.blackHoleXBadge")
                       : livePreview.finalWeight > 0.4
-                        ? "HEALTHY"
-                        : "DILUTED"}
+                        ? t("dag.healthyBadge")
+                        : t("dag.dilutedBadge")}
                   </Badge>
                 </div>
                 <div className="font-mono text-[11px] text-muted-foreground">
@@ -1322,13 +1350,13 @@ export function DagPanel() {
                 </div>
                 <div className="grid grid-cols-3 gap-2 font-mono text-[10px]">
                   <div>
-                    <div className="text-muted-foreground">Decay</div>
+                    <div className="text-muted-foreground">{t("dag.decay")}</div>
                     <div className="text-foreground/80">
                       {livePreview.decayFactor.toFixed(4)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Weight</div>
+                    <div className="text-muted-foreground">{t("dag.weight")}</div>
                     <div
                       className={
                         livePreview.isBlackHole
@@ -1340,13 +1368,13 @@ export function DagPanel() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Status</div>
+                    <div className="text-muted-foreground">{t("common.status")}</div>
                     <div className="text-foreground/80">
                       {livePreview.isBlackHole
-                        ? "crushed"
+                        ? t("dag.crushed")
                         : livePreview.finalWeight > 0.4
-                          ? "active"
-                          : "weak"}
+                          ? t("dag.active")
+                          : t("dag.weak")}
                     </div>
                   </div>
                 </div>
@@ -1358,7 +1386,7 @@ export function DagPanel() {
                 disabled={loading || !fuseEntityId || !fuseOwnerAvatarId}
               >
                 <Plus className="h-3.5 w-3.5" />
-                Fuse Shard into DAG
+                {t("dag.fuseShardIntoDag")}
               </Button>
             </div>
           </PanelCard>
@@ -1367,27 +1395,27 @@ export function DagPanel() {
         {/* ===== RIGHT COLUMN (45%) ===== */}
         <div className="space-y-4">
           {/* CPDF Formula Explainer */}
-          <PanelCard title="CPDF Formula Explainer" icon={Calculator}>
+          <PanelCard title={t("dag.cpdfExplainer")} icon={Calculator}>
             <CpdfExplainer />
           </PanelCard>
 
           {/* Lineage Split Simulator */}
-          <PanelCard title="Lineage Split Simulator" icon={GitBranch}>
+          <PanelCard title={t("dag.lineageSplit")} icon={GitBranch}>
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="font-mono text-[11px]">Entity</Label>
+                  <Label className="font-mono text-[11px]">{t("dag.entityLabel")}</Label>
                   <Select
                     value={splitEntityId}
                     onValueChange={setSplitEntityId}
                   >
                     <SelectTrigger className="font-mono text-[11px] w-full">
-                      <SelectValue placeholder="Select entity" />
+                      <SelectValue placeholder={t("dag.selectEntity")} />
                     </SelectTrigger>
                     <SelectContent>
                       {entityIds.length === 0 ? (
                         <SelectItem value="__none" disabled>
-                          No entities yet
+                          {t("dag.noEntitiesYet")}
                         </SelectItem>
                       ) : (
                         entityIds.map((id) => (
@@ -1405,7 +1433,7 @@ export function DagPanel() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="font-mono text-[11px]">
-                    Total Reward ($AFC)
+                    {t("dag.totalRewardAfc")}
                   </Label>
                   <Input
                     type="number"
@@ -1424,7 +1452,7 @@ export function DagPanel() {
                 disabled={splitting || !splitEntityId}
               >
                 <GitBranch className="h-3.5 w-3.5" />
-                {splitting ? "Computing…" : "Compute Split"}
+                {splitting ? t("dag.computing") : t("dag.computeSplit")}
               </Button>
 
               <AnimatePresence>
@@ -1462,13 +1490,13 @@ export function DagPanel() {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="font-mono text-[10px]">
-                            Avatar
+                            {t("dag.avatar")}
                           </TableHead>
                           <TableHead className="font-mono text-[10px] text-right">
-                            Weight
+                            {t("dag.weight")}
                           </TableHead>
                           <TableHead className="font-mono text-[10px] text-right">
-                            Share
+                            {t("dag.share")}
                           </TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1500,7 +1528,7 @@ export function DagPanel() {
                     </Table>
                     <Separator />
                     <div className="flex justify-between font-mono text-[11px]">
-                      <span className="text-muted-foreground">Total</span>
+                      <span className="text-muted-foreground">{t("common.total")}</span>
                       <span className="text-foreground">
                         {formatToken(
                           splitShares.reduce(
@@ -1515,10 +1543,9 @@ export function DagPanel() {
                 {splitShares && splitShares.length === 0 && (
                   <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>No weights</AlertTitle>
+                    <AlertTitle>{t("dag.noWeights")}</AlertTitle>
                     <AlertDescription>
-                      Entity has no non-black-hole lineage — all shards were
-                      crushed. Cannot split reward.
+                      {t("dag.noWeightsDesc")}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -1528,24 +1555,24 @@ export function DagPanel() {
 
           {/* Anti Money-Laundering Scanner */}
           <PanelCard
-            title="Anti Money-Laundering Scanner"
+            title={t("dag.antiLaundering")}
             icon={ShieldAlert}
           >
             <div className="space-y-3">
               <div className="grid grid-cols-1 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="font-mono text-[11px]">Entity</Label>
+                  <Label className="font-mono text-[11px]">{t("dag.entityLabel")}</Label>
                   <Select
                     value={scanEntityId}
                     onValueChange={setScanEntityId}
                   >
                     <SelectTrigger className="font-mono text-[11px] w-full">
-                      <SelectValue placeholder="Select entity" />
+                      <SelectValue placeholder={t("dag.selectEntity")} />
                     </SelectTrigger>
                     <SelectContent>
                       {entityIds.length === 0 ? (
                         <SelectItem value="__none" disabled>
-                          No entities yet
+                          {t("dag.noEntitiesYet")}
                         </SelectItem>
                       ) : (
                         entityIds.map((id) => (
@@ -1569,7 +1596,7 @@ export function DagPanel() {
                 variant="outline"
               >
                 <Activity className="h-3.5 w-3.5" />
-                {scanning ? "Scanning…" : "Scan for Laundering"}
+                {scanning ? t("dag.scanning") : t("dag.scanForLaundering")}
               </Button>
 
               <AnimatePresence>
@@ -1582,7 +1609,7 @@ export function DagPanel() {
                     {scanResult.suspicious ? (
                       <Alert variant="destructive">
                         <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Suspicious Pattern Detected</AlertTitle>
+                        <AlertTitle>{t("dag.suspiciousPattern")}</AlertTitle>
                         <AlertDescription>
                           {scanResult.reason}
                         </AlertDescription>
@@ -1590,9 +1617,9 @@ export function DagPanel() {
                     ) : (
                       <Alert className="border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                        <AlertTitle>Entity is Clean</AlertTitle>
+                        <AlertTitle>{t("dag.entityClean")}</AlertTitle>
                         <AlertDescription>
-                          No money-laundering pattern detected.
+                          {t("dag.noLaunderingDesc")}
                         </AlertDescription>
                       </Alert>
                     )}
@@ -1601,21 +1628,21 @@ export function DagPanel() {
                     <div className="grid grid-cols-3 gap-2">
                       <HeuristicStat
                         icon={Atom}
-                        label="Shards"
+                        label={t("dag.shards")}
                         value={scanResult.stats.shardCount}
                         threshold="> 10"
                         bad={scanResult.stats.shardCount > 10}
                       />
                       <HeuristicStat
                         icon={Gauge}
-                        label="Avg Q_ece"
+                        label={t("dag.avgQece")}
                         value={`${(scanResult.stats.avgEceScore / 100).toFixed(0)}%`}
                         threshold="< 20%"
                         bad={scanResult.stats.avgEceScore < 2000}
                       />
                       <HeuristicStat
                         icon={TrendingDown}
-                        label="Avg Sim"
+                        label={t("dag.avgSim")}
                         value={scanResult.stats.avgSimilarity.toFixed(2)}
                         threshold="< 0.30"
                         bad={scanResult.stats.avgSimilarity < 0.3}
@@ -1628,7 +1655,7 @@ export function DagPanel() {
                         <div className="flex items-center gap-1.5 mb-1.5">
                           <Ban className="h-3.5 w-3.5 text-rose-500" />
                           <span className="font-mono text-[11px] font-bold">
-                            Black-Holed Nodes ({scanResult.blackHoledNodes.length})
+                            {t("dag.blackHoledNodes")} ({scanResult.blackHoledNodes.length})
                           </span>
                         </div>
                         <div className="max-h-40 overflow-y-auto rounded-md border border-border/60 bg-card/30">
@@ -1673,6 +1700,7 @@ function HeuristicStat({
   threshold: string;
   bad: boolean;
 }) {
+  const t = useT();
   return (
     <div
       className={`rounded-md border p-2 ${
@@ -1693,7 +1721,7 @@ function HeuristicStat({
         {value}
       </div>
       <div className="text-[9px] font-mono text-muted-foreground">
-        trigger {threshold}
+        {t("dag.trigger")} {threshold}
       </div>
     </div>
   );
