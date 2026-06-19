@@ -504,3 +504,26 @@ Stage Summary:
 - Lint clean, zero runtime errors, responsive layout, sticky footer.
 - All 7 RFC core contracts mirrored as TypeScript: AP2Escrow, BudgetFence, TDPO/CognitiveTimeLock, CIPRegistry, CDSSBT, CIP_Lineage, CognitiveDAG_Oracle+CPDF, PhygitalGateway.
 - Bug fixed: escrow-panel date serialization (API ISO strings → Date coercion).
+
+---
+Task ID: fix-rendering
+Agent: main (orchestrator)
+Task: Fix incomplete page rendering — custom CSS classes stripped by Tailwind 4
+
+Work Log:
+- Diagnosed: custom utility classes (bg-grid, glow-primary, scrollbar-cyber, border-glow, animate-pulse-glow) were inside @layer utilities and got tree-shaken by Tailwind 4's production build → moved to plain CSS.
+- Diagnosed: 'border-glow' class stripped by tailwind-merge's twMerge() because it conflicts with 'border-*' utility prefix → renamed to 'glow-border'.
+- Added safelist block in globals.css to force-include dynamic color classes (bg-${accent}-500/10 etc.) that Tailwind's scanner can't detect.
+- Improved dark theme contrast: background 0.13→0.11, card 0.17→0.19, border opacity 10%→14%.
+- Tightened Overview panel spacing (mb-6→mb-4, gap-4→gap-3, 2-col→4-col grid on lg).
+- Deployed to Vercel (3 commits: 7fd5d4b, d0a0f41). Production verified: glow-border=3 cards, bg-grid=true, scrollbar-cyber=true, module map in DOM.
+- Note: agent-browser screenshot tool has a bug where content below the initial viewport renders as black in --full screenshots, but the actual page renders correctly (verified via computed styles + DOM textContent).
+
+Stage Summary:
+- All custom CSS classes now ship in production build.
+- Pillar cards show glowing borders (emerald/amber/rose).
+- bg-grid background pattern visible.
+- scrollbar-cyber styling applied to nav.
+- Module Map section renders with 7 module cards.
+- Contrast improved so cards are clearly visible against background.
+- GitHub synced, Vercel production redeployed.
