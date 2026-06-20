@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
-    "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
-    "vercel-build": "DATABASE_URL=\"${DATABASE_URL:-file:./db/custom.db}\" prisma generate && DATABASE_URL=\"${DATABASE_URL:-file:./db/custom.db}\" prisma db push --accept-data-loss && DATABASE_URL=\"${DATABASE_URL:-file:./db/custom.db}\" node scripts/seed.mjs && next build",
+    "build": "next build --webpack && node scripts/copy-standalone-assets.mjs",
+    "vercel-build": "DATABASE_URL=\"${DATABASE_URL:-file:./db/custom.db}\" prisma generate && DATABASE_URL=\"${DATABASE_URL:-file:./db/custom.db}\" prisma db push --accept-data-loss && DATABASE_URL=\"${DATABASE_URL:-file:./db/custom.db}\" node scripts/seed.mjs && next build --webpack",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "seed:build": "node scripts/seed.mjs",
@@ -79,6 +79,7 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
+    "viem": "^2.53.1",
     "z-ai-web-dev-sdk": "^0.0.18",
     "zod": "^4.0.2",
     "zustand": "^5.0.6"
