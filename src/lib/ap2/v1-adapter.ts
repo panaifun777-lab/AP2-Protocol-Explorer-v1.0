@@ -61,6 +61,12 @@ const tdpoAbi = parseAbi([
 
 const shadowAfcAbi = parseAbi([
   "function approve(address spender,uint256 amount) returns (bool)",
+  "function bridgeMint(address to,uint256 amount)",
+]);
+
+const budgetFenceAbi = parseAbi([
+  "function setPolicy(address payer,uint256 dailyCap,bool enabled)",
+  "function setScope(address payer,bytes32 scopeHash,bool allowed)",
 ]);
 
 export function readMode(input: unknown): AP2Mode {
@@ -136,6 +142,30 @@ export function encodeApprove(amount: string) {
     abi: shadowAfcAbi,
     functionName: "approve",
     args: [baseSepoliaContracts.AP2Escrow, BigInt(amount)],
+  });
+}
+
+export function encodeBridgeMint(to: `0x${string}`, amount: string) {
+  return encodeFunctionData({
+    abi: shadowAfcAbi,
+    functionName: "bridgeMint",
+    args: [to, BigInt(amount)],
+  });
+}
+
+export function encodeSetPolicy(payer: `0x${string}`, dailyCap: string) {
+  return encodeFunctionData({
+    abi: budgetFenceAbi,
+    functionName: "setPolicy",
+    args: [payer, BigInt(dailyCap), true],
+  });
+}
+
+export function encodeSetScope(payer: `0x${string}`, scopeHash: `0x${string}`) {
+  return encodeFunctionData({
+    abi: budgetFenceAbi,
+    functionName: "setScope",
+    args: [payer, scopeHash, true],
   });
 }
 
