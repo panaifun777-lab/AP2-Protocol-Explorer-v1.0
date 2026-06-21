@@ -14,6 +14,7 @@ import {
   Bug,
   ArrowRightCircle,
   Activity,
+  WalletCards,
 } from "lucide-react";
 import { PanelHeader, PanelCard, Stat } from "./panel-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +50,12 @@ import {
   type Escrow,
   type EscrowStatus,
 } from "@/lib/types";
+import {
+  ensureBaseSepolia,
+  getInjectedProvider,
+  readStoredMode,
+  shortAddress,
+} from "@/lib/ap2/wallet";
 
 // ============================================================
 // Types & helpers
@@ -178,6 +185,7 @@ export function EscrowPanel() {
   const [qualityScore, setQualityScore] = React.useState(70);
   const [streaming, setStreaming] = React.useState(false);
   const [settling, setSettling] = React.useState(false);
+  const [baseTesting, setBaseTesting] = React.useState(false);
 
   // BudgetFence inspector state
   const [selectedFenceAvatarId, setSelectedFenceAvatarId] = React.useState<
@@ -661,6 +669,87 @@ export function EscrowPanel() {
     return Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
   }, [selectedEscrow]);
 
+  const runBaseSepoliaTxTest = React.useCallback(async () => {
+    const provider = getInjectedProvider();
+    if (!provider) {
+      toast({
+        title: "Wallet required",
+        description: "Connect an injected wallet from the top-right control first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (readStoredMode() !== "base-sepolia") {
+      toast({
+        title: "Switch mode",
+        description: "Select Base Sepolia in the top-right mode control before sending a transaction.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setBaseTesting(true);
+    try {
+      await ensureBaseSepolia(provider);
+      const accounts = await provider.request<string[]>({
+        method: "eth_requestAccounts",
+      });
+      const from = accounts[0];
+      if (!from) throw new Error("Wallet returned no account");
+
+      const approveRes = await fetch("/api/v1/escrow/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "base-sepolia",
+          amount: "110000000000000000000",
+        }),
+      });
+      const approveJson = await approveRes.json();
+      if (!approveJson.ok) throw new Error(approveJson.error);
+
+      const approveHash = await provider.request<string>({
+        method: "eth_sendTransaction",
+        params: [{ from, ...approveJson.data.txRequest }],
+      });
+
+      const createRes = await fetch("/api/v1/escrow/create-task", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "base-sepolia",
+          payee: from,
+          baseAmount: "100000000000000000000",
+          optionAmount: "10000000000000000000",
+          durationSeconds: "1",
+          target: `XDP_Protocol_Genesis_Clean_${Date.now()}`,
+          scope: "legal",
+        }),
+      });
+      const createJson = await createRes.json();
+      if (!createJson.ok) throw new Error(createJson.error);
+
+      const createHash = await provider.request<string>({
+        method: "eth_sendTransaction",
+        params: [{ from, ...createJson.data.txRequest }],
+      });
+
+      toast({
+        title: "Base Sepolia tx sent",
+        description: `${shortAddress(from)} approve ${shortHash(approveHash)} / create ${shortHash(createHash)}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Base Sepolia tx failed",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setBaseTesting(false);
+    }
+  }, [toast]);
+
   return (
     <div>
       <PanelHeader
@@ -670,18 +759,30 @@ export function EscrowPanel() {
         description={t("escrow.description")}
         accent="emerald"
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            className="font-mono text-xs gap-1"
-            onClick={() => {
-              void fetchAvatars();
-              void fetchEscrows();
-            }}
-          >
-            <Activity className="h-3.5 w-3.5" />
-            {t("header.refresh")}
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-mono text-xs gap-1"
+              onClick={() => void runBaseSepoliaTxTest()}
+              disabled={baseTesting}
+            >
+              <WalletCards className="h-3.5 w-3.5" />
+              {baseTesting ? "Sending" : "Base Tx Test"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-mono text-xs gap-1"
+              onClick={() => {
+                void fetchAvatars();
+                void fetchEscrows();
+              }}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              {t("header.refresh")}
+            </Button>
+          </>
         }
       />
 
