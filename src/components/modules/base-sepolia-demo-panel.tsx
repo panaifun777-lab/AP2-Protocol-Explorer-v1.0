@@ -1,17 +1,21 @@
 "use client";
 
 import * as React from "react";
+import { decodeEventLog, parseAbi } from "viem";
 import { CheckCircle2, ExternalLink, Play, RefreshCw, Send, ShieldX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { PanelCard } from "./panel-shell";
 import { useToast } from "@/hooks/use-toast";
+import { baseSepoliaContracts } from "@/lib/ap2/v1-adapter";
 import {
   ensureBaseSepolia,
+  Eip1193Provider,
+  Eip1193Receipt,
   getInjectedProvider,
   readStoredMode,
   shortAddress,
+  waitForTransactionReceipt,
 } from "@/lib/ap2/wallet";
 
 type TxStep =
@@ -50,6 +54,37 @@ interface TDPOState {
 }
 
 const DEFAULT_ACCOUNT = "0x10687368eF1be3f178de0fCCf5EdfF49e1C258B1";
+const taskCreatedAbi = parseAbi([
+  "event TaskCreated(uint256 indexed taskId,address payer,address payee,bytes32 targetHash,bytes32 scopeHash)",
+]);
+
+async function waitForSuccessReceipt(provider: Eip1193Provider, hash: string) {
+  const receipt = await waitForTransactionReceipt(provider, hash);
+  if (receipt.status && receipt.status !== "0x1") {
+    throw new Error(`Transaction reverted: ${shortAddress(hash)}`);
+  }
+  return receipt;
+}
+
+function readCreatedTaskId(receipt: Eip1193Receipt) {
+  const escrowAddress = baseSepoliaContracts.AP2Escrow.toLowerCase();
+  for (const log of receipt.logs ?? []) {
+    if (log.address.toLowerCase() !== escrowAddress) continue;
+    try {
+      const decoded = decodeEventLog({
+        abi: taskCreatedAbi,
+        data: log.data,
+        topics: log.topics,
+      });
+      if (decoded.eventName === "TaskCreated") {
+        return decoded.args.taskId.toString();
+      }
+    } catch {
+      // Ignore logs from the same contract that are not TaskCreated.
+    }
+  }
+  throw new Error("TaskCreated event not found in create-task receipt");
+}
 
 export function BaseSepoliaDemoPanel() {
   const { toast } = useToast();
@@ -62,7 +97,7 @@ export function BaseSepoliaDemoPanel() {
   const [history, setHistory] = React.useState<TxHistoryItem[]>([]);
 
   const sendStep = React.useCallback(
-    async (step: TxStep) => {
+    async (step: TxStep, taskIdOverride?: string) => {
       const provider = getInjectedProvider();
       if (!provider) throw new Error("No injected wallet found");
       if (readStoredMode() !== "base-sepolia") {
@@ -73,6 +108,7 @@ export function BaseSepoliaDemoPanel() {
       const from = accounts[0];
       if (!from) throw new Error("Wallet returned no account");
       setAccount(from);
+      const activeTaskId = taskIdOverride ?? taskId;
 
       const endpoint =
         step === "mint-safc"
@@ -119,9 +155,9 @@ export function BaseSepoliaDemoPanel() {
                 scope: "legal",
               }
             : step === "withdraw"
-              ? { mode: "base-sepolia", taskId }
+              ? { mode: "base-sepolia", taskId: activeTaskId }
               : step === "settle"
-                ? { mode: "base-sepolia", taskId, qualityScore: "90" }
+                ? { mode: "base-sepolia", taskId: activeTaskId, qualityScore: "90" }
                 : step === "lock-contrarian"
                   ? { mode: "base-sepolia", target, durationSeconds: "2592000" }
                   : step === "inject-factor"
@@ -150,6 +186,34 @@ export function BaseSepoliaDemoPanel() {
     [target, taskId, toast],
   );
 
+  const refreshState = React.useCallback(
+    async (taskIdOverride?: string) => {
+      try {
+        const activeTaskId = taskIdOverride ?? taskId;
+        const taskUrl = activeTaskId
+          ? `/api/v1/escrow/status?taskId=${encodeURIComponent(activeTaskId)}`
+          : "/api/v1/escrow/status";
+        const [taskRes, tdpoRes] = await Promise.all([
+          fetch(taskUrl),
+          fetch(`/api/v1/tdpo/status?target=${encodeURIComponent(target)}`),
+        ]);
+        const taskJson = await taskRes.json();
+        const tdpoJson = await tdpoRes.json();
+        if (!taskJson.ok) throw new Error(taskJson.error);
+        if (!tdpoJson.ok) throw new Error(tdpoJson.error);
+        setTaskState(taskJson.data);
+        setTdpoState(tdpoJson.data);
+      } catch (error) {
+        toast({
+          title: "State refresh failed",
+          description: (error as Error).message,
+          variant: "destructive",
+        });
+      }
+    },
+    [target, taskId, toast],
+  );
+
   const runStep = React.useCallback(
     async (step: TxStep) => {
       setRunningStep(step);
@@ -169,13 +233,38 @@ export function BaseSepoliaDemoPanel() {
   );
 
   const runAll = React.useCallback(async () => {
+    const provider = getInjectedProvider();
+    if (!provider) {
+      toast({
+        title: "Demo run paused",
+        description: "No injected wallet found",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setRunningStep("all");
     try {
-      await sendStep("approve");
+      const approveHash = await sendStep("approve");
+      await waitForSuccessReceipt(provider, approveHash);
       const createHash = await sendStep("create-task");
+      const createReceipt = await waitForSuccessReceipt(provider, createHash);
+      const createdTaskId = readCreatedTaskId(createReceipt);
+      setTaskId(createdTaskId);
+      const withdrawHash = await sendStep("withdraw", createdTaskId);
+      await waitForSuccessReceipt(provider, withdrawHash);
+      const settleHash = await sendStep("settle", createdTaskId);
+      await waitForSuccessReceipt(provider, settleHash);
+      const lockHash = await sendStep("lock-contrarian");
+      await waitForSuccessReceipt(provider, lockHash);
+      const injectHash = await sendStep("inject-factor");
+      await waitForSuccessReceipt(provider, injectHash);
+      const vetoHash = await sendStep("veto");
+      await waitForSuccessReceipt(provider, vetoHash);
+      await refreshState(createdTaskId);
       toast({
-        title: "Create task submitted",
-        description: `Set taskId after confirmation. Tx ${shortAddress(createHash)}`,
+        title: "AP2 demo run completed",
+        description: `Task ${createdTaskId} reached veto flow.`,
       });
     } catch (error) {
       toast({
@@ -186,7 +275,7 @@ export function BaseSepoliaDemoPanel() {
     } finally {
       setRunningStep(null);
     }
-  }, [sendStep, toast]);
+  }, [refreshState, sendStep, toast]);
 
   const configureCleanEnv = React.useCallback(async () => {
     setRunningStep("all");
@@ -208,30 +297,6 @@ export function BaseSepoliaDemoPanel() {
       setRunningStep(null);
     }
   }, [sendStep, toast]);
-
-  const refreshState = React.useCallback(async () => {
-    try {
-      const taskUrl = taskId
-        ? `/api/v1/escrow/status?taskId=${encodeURIComponent(taskId)}`
-        : "/api/v1/escrow/status";
-      const [taskRes, tdpoRes] = await Promise.all([
-        fetch(taskUrl),
-        fetch(`/api/v1/tdpo/status?target=${encodeURIComponent(target)}`),
-      ]);
-      const taskJson = await taskRes.json();
-      const tdpoJson = await tdpoRes.json();
-      if (!taskJson.ok) throw new Error(taskJson.error);
-      if (!tdpoJson.ok) throw new Error(tdpoJson.error);
-      setTaskState(taskJson.data);
-      setTdpoState(tdpoJson.data);
-    } catch (error) {
-      toast({
-        title: "State refresh failed",
-        description: (error as Error).message,
-        variant: "destructive",
-      });
-    }
-  }, [target, taskId, toast]);
 
   const stepButton = (step: TxStep, label: string) => (
     <Button

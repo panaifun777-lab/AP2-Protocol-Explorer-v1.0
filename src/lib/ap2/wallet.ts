@@ -8,6 +8,17 @@ export interface Eip1193Provider {
   removeListener?(event: string, listener: (...args: unknown[]) => void): void;
 }
 
+export interface Eip1193Log {
+  address: string;
+  topics: `0x${string}`[];
+  data: `0x${string}`;
+}
+
+export interface Eip1193Receipt {
+  status?: `0x${string}`;
+  logs?: Eip1193Log[];
+}
+
 declare global {
   interface Window {
     ethereum?: Eip1193Provider;
@@ -80,4 +91,21 @@ export function storeMode(mode: AP2Mode) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem("ap2-mode", mode);
   window.dispatchEvent(new CustomEvent("ap2-mode-change", { detail: mode }));
+}
+
+export async function waitForTransactionReceipt(
+  provider: Eip1193Provider,
+  hash: string,
+  timeoutMs = 120_000,
+) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const receipt = await provider.request<Eip1193Receipt | null>({
+      method: "eth_getTransactionReceipt",
+      params: [hash],
+    });
+    if (receipt) return receipt;
+    await new Promise((resolve) => setTimeout(resolve, 2_500));
+  }
+  throw new Error(`Timed out waiting for ${shortAddress(hash)}`);
 }
