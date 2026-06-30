@@ -16,6 +16,7 @@ import {
   Activity,
 } from "lucide-react";
 import { PanelHeader, PanelCard, Stat } from "./panel-shell";
+import { BaseSepoliaDemoPanel } from "./base-sepolia-demo-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -684,6 +685,10 @@ export function EscrowPanel() {
           </Button>
         }
       />
+
+      <div className="mb-6">
+        <BaseSepoliaDemoPanel />
+      </div>
 
       {/* ===================== STATS ===================== */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

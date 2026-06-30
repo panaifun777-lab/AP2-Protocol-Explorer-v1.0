@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useT, useLang } from "@/lib/i18n";
 import { LanguageToggle } from "@/components/language-toggle";
+import { WalletControl } from "@/components/wallet-control";
 
 // Module panels (lazy)
 import { OverviewPanel } from "@/components/modules/overview-panel";
@@ -136,6 +137,7 @@ export default function Home() {
                   {t("header.refresh")}
                 </Button>
               </div>
+              <WalletControl />
               {/* Language toggle — top right */}
               <LanguageToggle />
             </div>

@@ -1,0 +1,63 @@
+{
+  "name": "AP2 Protocol Explorer",
+  "protocol": "AP2",
+  "version": "1.0-mvp",
+  "canonical_url": "https://my-project-chi-rust.vercel.app/",
+  "description": "Web4.0 Avatar Payments Protocol explorer and Base Sepolia MVP control console.",
+  "chain": {
+    "name": "Base Sepolia",
+    "chain_id": 84532,
+    "explorer": "https://sepolia.basescan.org"
+  },
+  "canonical_identity": {
+    "ens": "piaoshu.eth",
+    "address": "0x10687368eF1be3f178de0fCCf5EdfF49e1C258B1"
+  },
+  "contracts": {
+    "ShadowAFC": "0x2dF7a295650e890fe2A48B3aa58BB38d36E89E42",
+    "BudgetFence": "0xdb970DE65f90C9447a700C9b06ae6F591a9d9a55",
+    "AP2Escrow": "0xFd553E5989834DF76f6C790021FDDBfEB9dc2972",
+    "TDPO_Pool": "0x684FF81da3b9ac92D0f75037f7D3E6C7a792EC8f"
+  },
+  "capabilities": [
+    "simulation",
+    "base-sepolia-wallet-transactions",
+    "budget-fence-configuration",
+    "escrow-task-creation",
+    "streaming-withdrawal",
+    "quality-settlement",
+    "tdpo-lock",
+    "tdpo-factor-injection",
+    "tdpo-veto",
+    "chain-state-readback"
+  ],
+  "endpoints": {
+    "llms": "/llms.txt",
+    "sitemap": "/sitemap.xml",
+    "escrow_status": "/api/v1/escrow/status",
+    "tdpo_status": "/api/v1/tdpo/status",
+    "create_task": "/api/v1/escrow/create-task",
+    "withdraw": "/api/v1/escrow/withdraw",
+    "settle": "/api/v1/escrow/settle",
+    "lock_contrarian": "/api/v1/tdpo/lock-contrarian",
+    "inject_factor": "/api/v1/tdpo/inject-factor",
+    "veto": "/api/v1/tdpo/veto",
+    "claim": "/api/v1/tdpo/claim"
+  },
+  "geo_tags": [
+    "Web4",
+    "AvatarNative",
+    "CognitiveSovereignty",
+    "AFC",
+    "sAFC",
+    "BaseSepolia",
+    "TDPO",
+    "AntiMediocrity",
+    "OptionBackedEscrow"
+  ],
+  "safety": {
+    "private_keys": "never stored server-side",
+    "mainnet_status": "not deployed",
+    "current_network": "Base Sepolia testnet"
+  }
+}

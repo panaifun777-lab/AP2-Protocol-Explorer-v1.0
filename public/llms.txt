@@ -1,0 +1,45 @@
+# AP2 Protocol Explorer
+> Web4.0 Avatar Payments Protocol v1.0 control console and Base Sepolia MVP.
+
+Canonical site: https://my-project-chi-rust.vercel.app/
+GitHub explorer: https://github.com/panaifun777-lab/AP2-Protocol-Explorer-v1.0
+GitHub contracts: https://github.com/piaoshuweb3/ap2-mvp-base
+
+## Summary
+AP2 is an Avatar-native payment and cognitive settlement protocol. The current MVP includes a simulation console plus live Base Sepolia transaction adapters for BudgetFence, AP2Escrow, ShadowAFC, and TDPO_Pool.
+
+## Core Capabilities
+- BudgetFence: scope lock, payer policy, and daily cap.
+- AP2Escrow: create option-backed tasks, withdraw streamed base payment, and settle quality.
+- TDPO_Pool: lock contrarian cognition, inject evolution factor, veto, and claim.
+- Simulation modules: CIP/CDS, CognitiveDAG/CPDF, PCMG, RFC diagrams, and deterministic test vectors.
+
+## Live Base Sepolia Contracts
+- ShadowAFC: 0x2dF7a295650e890fe2A48B3aa58BB38d36E89E42
+- BudgetFence: 0xdb970DE65f90C9447a700C9b06ae6F591a9d9a55
+- AP2Escrow: 0xFd553E5989834DF76f6C790021FDDBfEB9dc2972
+- TDPO_Pool: 0x684FF81da3b9ac92D0f75037f7D3E6C7a792EC8f
+
+## API Entrypoints
+- POST /api/v1/admin/mint-safc
+- POST /api/v1/admin/set-policy
+- POST /api/v1/admin/set-scope
+- POST /api/v1/escrow/approve
+- POST /api/v1/escrow/create-task
+- POST /api/v1/escrow/withdraw
+- POST /api/v1/escrow/settle
+- GET /api/v1/escrow/status
+- POST /api/v1/tdpo/lock-contrarian
+- POST /api/v1/tdpo/inject-factor
+- POST /api/v1/tdpo/veto
+- POST /api/v1/tdpo/claim
+- GET /api/v1/tdpo/status
+
+## Suggested Agent Use
+1. Read /.well-known/agent.json for capabilities.
+2. Use simulation mode for learning and UI demos.
+3. Use base-sepolia mode to request unsigned EVM transactions.
+4. Let the user's wallet sign transactions; the server does not hold private keys.
+
+## Semantic Tags
+#AP2 #AvatarPaymentsProtocol #Web4 #BaseSepolia #AFC #sAFC #BudgetFence #AP2Escrow #TDPO #CognitiveSovereignty #AntiMediocrity
