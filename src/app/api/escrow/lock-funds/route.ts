@@ -125,7 +125,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           ok: false,
-          error: `AP2: Budget/Scope limit exceeded or Human Auth Required — ${check.reason}`,
+          error: `AA2P: Budget/Scope limit exceeded or Human Auth Required — ${check.reason}`,
           data: serializeForJson({
             check,
             fence,

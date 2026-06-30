@@ -53,7 +53,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           ok: false,
-          error: `AP2: Invalid status — escrow is ${escrow.status}, expected Streaming`,
+          error: `AA2P: Invalid status — escrow is ${escrow.status}, expected Streaming`,
         },
         { status: 400 },
       );
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           ok: false,
-          error: `AP2: Nothing to release (elapsed=${result.elapsedSeconds}s / total=${result.totalDurationSeconds}s)`,
+          error: `AA2P: Nothing to release (elapsed=${result.elapsedSeconds}s / total=${result.totalDurationSeconds}s)`,
         },
         { status: 400 },
       );

@@ -1,6 +1,20 @@
 "use client";
 
-import { Layers, Zap, Shield, Heart, Network, Crosshair } from "lucide-react";
+import {
+  Layers,
+  Zap,
+  Shield,
+  Heart,
+  Network,
+  Crosshair,
+  Sparkles,
+  Brain,
+  Palette,
+  Gavel,
+  Users,
+  Eye,
+  Lightbulb,
+} from "lucide-react";
 import { PanelHeader, PanelCard, Stat } from "./panel-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +47,16 @@ export function OverviewPanel() {
       accent: "rose" as const,
       rfc: "§5.3",
     },
+  ];
+
+  // Six scarce human capabilities
+  const capabilities = [
+    { icon: Lightbulb, label: t("overview.cap1"), accent: "emerald" },
+    { icon: Sparkles, label: t("overview.cap2"), accent: "amber" },
+    { icon: Palette, label: t("overview.cap3"), accent: "violet" },
+    { icon: Gavel, label: t("overview.cap4"), accent: "cyan" },
+    { icon: Users, label: t("overview.cap5"), accent: "rose" },
+    { icon: Eye, label: t("overview.cap6"), accent: "emerald" },
   ];
 
   const stackItems1 =
@@ -81,11 +105,66 @@ export function OverviewPanel() {
 
       {/* Hero stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <Stat label={t("overview.protocol")} value="AP2 v1.0" hint="RFC 001 PROPOSED" accent="emerald" />
+        <Stat label={t("overview.protocol")} value="AA2P v1.0" hint="RFC 001 PROPOSED" accent="emerald" />
         <Stat label={t("overview.modules")} value="7" hint={lang === "zh" ? "核心合约" : "core contracts"} accent="cyan" />
         <Stat label={t("overview.consensus")} value="PoUE+PoRC" hint="AFC Chain" accent="violet" />
         <Stat label={t("overview.statusLabel")} value="PROPOSED" hint="2026.06.18" accent="amber" />
       </div>
+
+      {/* ============ NEW: Scarce Soul Concept Section ============ */}
+      <Card className="glow-border border-emerald-500/30 overflow-hidden mb-4">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                <Brain className="h-5 w-5" />
+              </div>
+              <CardTitle className="text-sm font-mono">
+                {t("overview.conceptTitle")}
+              </CardTitle>
+            </div>
+            <Badge variant="outline" className="font-mono text-[10px] border-emerald-500/40 text-emerald-600 dark:text-emerald-400">
+              AA2P · Vision
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {/* Slogan */}
+          <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-3">
+            <p className="font-mono text-sm font-semibold text-emerald-600 dark:text-emerald-400 leading-relaxed">
+              &ldquo;{lang === "zh" ? t("overview.conceptSlogan") : t("overview.conceptSloganEn")}&rdquo;
+            </p>
+            <p className="font-mono text-xs text-amber-600 dark:text-amber-400 mt-2 leading-relaxed">
+              &ldquo;{lang === "zh" ? t("overview.conceptMoat") : t("overview.conceptMoatEn")}&rdquo;
+            </p>
+          </div>
+          {/* Description */}
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {lang === "zh" ? t("overview.conceptDesc") : t("overview.conceptDescEn")}
+          </p>
+          {/* Six capabilities */}
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              {t("overview.sixCapabilities")}
+            </div>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+              {capabilities.map((c) => {
+                const Icon = c.icon;
+                return (
+                  <div
+                    key={c.label}
+                    className={`flex flex-col items-center gap-1 rounded-md border border-border/40 bg-${c.accent}-500/5 p-2`}
+                  >
+                    <Icon className={`h-4 w-4 text-${c.accent}-600 dark:text-${c.accent}-400`} />
+                    <span className="font-mono text-[10px] text-center">{c.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Three constitutional pillars */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">

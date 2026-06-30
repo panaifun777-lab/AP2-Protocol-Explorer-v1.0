@@ -16,12 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AP2 Protocol Explorer | Avatar Payments Protocol v1.0",
+  title: "AA2P Protocol Explorer | Avatar-to-Avatar Payments Protocol v1.0",
   description:
-    "Web4.0 Avatar Payments Protocol (AP2) v1.0 — Interactive explorer & simulation console. Mirrors RFC v1.0 core contracts: AP2Escrow, BudgetFence, TDPO, CIP, CDS SBT, CognitiveDAG+CPDF, PCMG. Bilingual (中文/English).",
+    "Web4.0 Avatar-to-Avatar Payments Protocol (AA2P) v1.0 — Interactive explorer & simulation console. Not just cloning your digital shell, but extending your scarce soul. Mirrors RFC v1.0 core contracts: AP2Escrow, BudgetFence, TDPO, CIP, CDS SBT, CognitiveDAG+CPDF, PCMG. Bilingual (中文/English).",
   keywords: [
-    "AP2",
-    "Avatar Payments Protocol",
+    "AA2P",
+    "Avatar-to-Avatar Payments Protocol",
     "Web4.0",
     "AFC Chain",
     "PoUE",
@@ -32,8 +32,9 @@ export const metadata: Metadata = {
     "PCMG",
     "Cognitive DAG",
     "M-Pata",
+    "scarce soul",
   ],
-  authors: [{ name: "AP2 Protocol Explorer" }],
+  authors: [{ name: "AA2P Protocol Explorer" }],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },

@@ -37,7 +37,7 @@ export const MODULES: ModuleConfig[] = [
     id: "overview",
     label: "Protocol Overview",
     shortLabel: "Overview",
-    description: "AP2 v1.0 architecture, 4-layer stack, RFC summary",
+    description: "AA2P v1.0 architecture, 4-layer stack, RFC summary",
     icon: Layers,
     rfcSection: "RFC §4",
     accent: "emerald",

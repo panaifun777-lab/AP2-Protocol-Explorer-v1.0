@@ -1,5 +1,5 @@
 // ============================================================
-// AP2 Protocol v1.0 — PoUE + PoRC Consensus Visualization Data
+// AA2P Protocol v1.0 — PoUE + PoRC Consensus Visualization Data
 // RFC §4.2 (AFC Chain), §5.1 (CPDF), §6 (Roadmap)
 //
 // Pure data + a tiny helper used by the Tests panel's "PoUE/PoRC
@@ -174,7 +174,7 @@ export const ROADMAP_PHASES: RoadmapPhase[] = [
     phase: "Phase 1",
     title: "Shadow Avatar (Base MVP)",
     description:
-      "Deploy AP2 core contracts (Escrow, BudgetFence, TDPO) on Base chain. Issue ERC-20 $AFC. Off-chain M-Pata signs PoUE VCs for whitelist. Run avatar rental + retroactive lock demos.",
+      "Deploy AA2P core contracts (Escrow, BudgetFence, TDPO) on Base chain. Issue ERC-20 $AFC. Off-chain M-Pata signs PoUE VCs for whitelist. Run avatar rental + retroactive lock demos.",
     duration: "Month 1-3",
     status: "active",
     icon: "Rocket",

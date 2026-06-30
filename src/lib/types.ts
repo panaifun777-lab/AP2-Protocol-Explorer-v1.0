@@ -1,5 +1,5 @@
 // ============================================================
-// AP2 Protocol v1.0 - Shared Types
+// AA2P Protocol v1.0 - Shared Types
 // Mirrors RFC v1.0 Solidity contract types as TypeScript
 // All amounts are in 6-decimals (USDC-style) unless noted
 // ============================================================

@@ -192,7 +192,7 @@ const PHASE_TITLES_ZH: Record<string, string> = {
 
 const PHASE_DESCS_ZH: Record<string, string> = {
   "phase-1":
-    "在 Base 链上部署 AP2 核心合约 (Escrow、BudgetFence、TDPO)。发行 ERC-20 $AFC。链下 M-Pata 为白名单签署 PoUE VC。运行分身租赁 + 追溯锁定演示。",
+    "在 Base 链上部署 AA2P 核心合约 (Escrow、BudgetFence、TDPO)。发行 ERC-20 $AFC。链下 M-Pata 为白名单签署 PoUE VC。运行分身租赁 + 追溯锁定演示。",
   "phase-2":
     "启动 PoUE + PoRC 共识的 AFC 主网。开放认知状态迁移桥 — Base 链分身、TDPO 锁仓和 CDS SBT 无损映射到 AFC 主网。",
   "phase-3":

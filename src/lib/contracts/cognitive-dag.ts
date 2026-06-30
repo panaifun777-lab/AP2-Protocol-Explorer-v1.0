@@ -1,5 +1,5 @@
 // ============================================================
-// AP2 Protocol v1.0 - CognitiveDAG_Oracle + CPDF + CIP_Lineage
+// AA2P Protocol v1.0 - CognitiveDAG_Oracle + CPDF + CIP_Lineage
 // Mirrors RFC v1.0 §5.1 (CPDF/CCA) and `CIP_Lineage._executeLineageSplit`.
 //
 // Pure TypeScript mirroring `CognitiveDAG_Oracle.sol`:

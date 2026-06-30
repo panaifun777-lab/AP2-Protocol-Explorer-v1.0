@@ -15,7 +15,7 @@ import {
 } from "@/lib/types";
 
 // ----- 1. isContrarianCognition -----
-// RFC line 402: require(variance > 500 && mean < 30, "AP2: Not a contrarian cognition")
+// RFC line 402: require(variance > 500 && mean < 30, "AA2P: Not a contrarian cognition")
 export function isContrarianCognition(
   mean: number,
   variance: number,
@@ -78,8 +78,8 @@ export function computeEvolutionFactor(
 // Mirrors RFC claimRetroactiveReward (lines 418-443).
 //
 // Pre-conditions (RFC lines 420-421):
-//   require(now >= asset.unlockTimestamp, "AP2: Time-lock not expired")
-//   require(!asset.isRetroactiveTriggered, "AP2: Already claimed")
+//   require(now >= asset.unlockTimestamp, "AA2P: Time-lock not expired")
+//   require(!asset.isRetroactiveTriggered, "AA2P: Already claimed")
 //
 // Then:
 //   evolutionFactor = futureMean / (initialMean + 1)
@@ -113,7 +113,7 @@ export function claimRetroactiveReward(
       evolutionFactor: 0,
       rewardAmount: 0n,
       reputationDelta: 0,
-      reason: "AP2: Time-lock not expired",
+      reason: "AA2P: Time-lock not expired",
     };
   }
   // Pre-condition: not already claimed
@@ -124,7 +124,7 @@ export function claimRetroactiveReward(
       evolutionFactor: 0,
       rewardAmount: 0n,
       reputationDelta: 0,
-      reason: "AP2: Already claimed",
+      reason: "AA2P: Already claimed",
     };
   }
 
@@ -183,7 +183,7 @@ export function injectMediocrityTax(
   taxAmount: Amount,
 ): Amount {
   if (taxAmount < 0n) {
-    throw new Error("AP2: tax amount cannot be negative");
+    throw new Error("AA2P: tax amount cannot be negative");
   }
   return poolBalance + taxAmount;
 }

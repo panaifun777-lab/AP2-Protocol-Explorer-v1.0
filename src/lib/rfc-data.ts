@@ -1,6 +1,6 @@
 // ============================================================
-// AP2 Protocol v1.0 — RFC Document & Diagram Data Layer
-// Source: /upload/RFC v1.0 &AP2 协议.md (1411 lines)
+// AA2P Protocol v1.0 — RFC Document & Diagram Data Layer
+// Source: /upload/RFC v1.0 &AA2P 协议.md (1411 lines)
 // Used by: src/components/modules/rfc-panel.tsx
 // ============================================================
 
@@ -14,7 +14,7 @@ export interface RfcMeta {
 }
 
 export const RFC_META: RfcMeta = {
-  title: "RFC 001: Avatar Payments Protocol (AP2) v1.0",
+  title: "RFC 001: Avatar-to-Avatar Payments Protocol (AA2P) v1.0",
   status: "PROPOSED STANDARD",
   author: "飘叔 (Piaoshu)",
   date: "2026.06.18",

@@ -1,6 +1,6 @@
-# AP2 Protocol Explorer v1.0
+# AA2P Protocol Explorer v1.0
 
-> **Web4.0 Avatar Payments Protocol (AP2) v1.0** — Interactive explorer & simulation console
+> **Web4.0 Avatar-to-Avatar Payments Protocol (AA2P) v1.0** — Interactive explorer & simulation console
 > 
 > Mirrors RFC 001 core contracts as TypeScript, with a cyberpunk-themed dashboard for exploring the protocol's 7 core modules.
 
@@ -14,7 +14,7 @@
 
 ## 🌌 Overview
 
-AP2 (Avatar Payments Protocol) is the **Web4.0 native payment & cognitive settlement standard** for multi-dimensional Avatar economies. Unlike Web3's HTTP payment patches (x402) built for stateless Agents, AP2 is built for **Avatars — digital lifeforms with cognitive ownership, emotion baselines, and memory shards**.
+AA2P (Avatar-to-Avatar Payments Protocol) is the **Web4.0 native payment & cognitive settlement standard** for multi-dimensional Avatar economies. Unlike Web3's HTTP payment patches (x402) built for stateless Agents, AP2 is built for **Avatars — digital lifeforms with cognitive ownership, emotion baselines, and memory shards**.
 
 This explorer is an interactive implementation of [RFC 001: AP2 v1.0](./upload/RFC%20v1.0%20%26AP2%20%E5%8D%8F%E8%AE%AE.md), letting you:
 

@@ -535,7 +535,7 @@ export function RfcPanel() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "RFC-001-AP2-v1.0.md";
+    a.download = "RFC-001-AA2P-v1.0.md";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

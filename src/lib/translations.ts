@@ -1,7 +1,7 @@
 "use client";
 
 // ============================================================
-// AP2 Protocol Explorer — Bilingual Dictionary (zh / en)
+// AA2P Protocol Explorer — Bilingual Dictionary (zh / en)
 // Every UI string that needs translation lives here.
 // Access via useT() hook:  t("nav.overview") → "概览" or "Overview"
 // ============================================================
@@ -9,7 +9,7 @@
 const zh = {
   // ---- Header ----
   header: {
-    title: "AP2 协议探索器",
+    title: "AA2P 协议探索器",
     subtitle: "Avatar 支付协议 v1.0 · RFC 001",
     simActive: "仿真运行中",
     booting: "启动中…",
@@ -19,7 +19,7 @@ const zh = {
   },
   // ---- Footer ----
   footer: {
-    status: "AP2 v1.0 · RFC 001 · Avatar 支付协议",
+    status: "AA2P v1.0 · RFC 001 · Avatar-to-Avatar 支付协议",
     chain: "Web4.0 · AFC 链 · PoUE + PoRC",
     github: "GitHub",
   },
@@ -73,12 +73,34 @@ const zh = {
   },
   // ---- Overview panel ----
   overview: {
-    title: "AP2 协议概览",
-    description: "Web4.0 Avatar 支付协议 v1.0 — 数字生命宪法·四层架构·三大宪法原则",
+    title: "AA2P 协议概览",
+    description: "Web4.0 Avatar-to-Avatar 支付协议 v1.0 — 数字生命宪法·四层架构·三大宪法原则",
     protocol: "协议",
+    protocolValue: "AA2P v1.0",
     modules: "模块数",
     consensus: "共识",
     statusLabel: "状态",
+    // New concept section — the "scarce soul" vision
+    conceptTitle: "稀缺灵魂 · 价值延伸",
+    conceptSlogan: "不仅仅是克隆你的数字躯壳,更是延伸你的稀缺灵魂。",
+    conceptSloganEn: "Not just cloning your digital shell, but extending your scarce soul.",
+    conceptMoat: "让智力成为 Token,让稀缺能力成为你的护城河。",
+    conceptMoatEn: "Turn intelligence into Tokens, let scarce capabilities be your moat.",
+    conceptDesc: "这不仅仅是一个数字克隆体(Clone),它是一个拥有「人类稀缺六大能力」的独立价值主体。它通过协议层(Protocol Layer)接入 Web4.0 网络,不仅模拟你的「形」(外貌、声音),更模拟你的「神」(提问、创造、审美、判断、合作、愿景),从而在物理世界(你睡觉时)和数字世界(协议层交互时)实现 24 小时不间断的价值创造与财富增值。",
+    conceptDescEn: "This is not just a digital clone — it is an independent value entity possessing the six scarce human capabilities. Through the Protocol Layer it connects to the Web4.0 network, simulating not only your form (appearance, voice) but your spirit (questioning, creation, aesthetics, judgment, collaboration, vision), enabling 24/7 uninterrupted value creation and wealth growth across both the physical world (while you sleep) and the digital world (during protocol-layer interactions).",
+    sixCapabilities: "人类稀缺六大能力",
+    cap1: "提问",
+    cap1En: "Questioning",
+    cap2: "创造",
+    cap2En: "Creation",
+    cap3: "审美",
+    cap3En: "Aesthetics",
+    cap4: "判断",
+    cap4En: "Judgment",
+    cap5: "合作",
+    cap5En: "Collaboration",
+    cap6: "愿景",
+    cap6En: "Vision",
     pillars: "三大宪法原则",
     pillar1Title: "认知主权",
     pillar1Desc: "PoUE 唯一实体证明 + CIP 意识继承 + CDS 跨维度灵魂绑定。打破私钥诅咒,数字生命跨越生死与载体实现永生。",
@@ -87,7 +109,7 @@ const zh = {
     pillar3Title: "虚实同构",
     pillar3Desc: "PCMG 虚实跨膜网关。多模态物理证明 + ECE 情绪共识双重校验。数字意志就是物理世界的绝对法则。",
     stackTitle: "协议栈架构 · 四层",
-    layer1: "规范层 AP2 Core",
+    layer1: "规范层 AA2P Core",
     layer2: "共识与计算层 AFC 链",
     layer3: "灵魂与跨膜层",
     layer4: "生态与 SDK 层",
@@ -95,7 +117,7 @@ const zh = {
   },
   // ---- Escrow panel ----
   escrow: {
-    title: "AP2Escrow + BudgetFence",
+    title: "AA2P-Escrow + BudgetFence",
     description: "流式支付 · 作用域锁 · 衰减授权 · MCP 验证结算(含回拨路径)",
     totalEscrows: "托管总数",
     streamingCount: "流式中",
@@ -650,7 +672,7 @@ const zh = {
     finality: "最终性",
     sybilResistance: "女巫抵抗",
     phaseRoadmapRfc: "阶段路线图 — RFC §6",
-    phaseRoadmapDesc: "三阶段 AP2 演进:Base 链 MVP → PoUE+PoRC 共识的 AFC 主网 → 与全球 IoT 集成的全面虚实共生。",
+    phaseRoadmapDesc: "三阶段 AA2P 演进:Base 链 MVP → PoUE+PoRC 共识的 AFC 主网 → 与全球 IoT 集成的全面虚实共生。",
     active: "● 运行中",
     planned: "已规划",
     rfcAlertTitle: "RFC §4.2 — 认知驱动、实体唯一的链",
@@ -664,7 +686,7 @@ const zh = {
 
 const en = {
   header: {
-    title: "AP2 Protocol Explorer",
+    title: "AA2P Protocol Explorer",
     subtitle: "Avatar Payments Protocol v1.0 · RFC 001",
     simActive: "SIM ACTIVE",
     booting: "BOOTING…",
@@ -673,7 +695,7 @@ const en = {
     refresh: "Refresh",
   },
   footer: {
-    status: "AP2 v1.0 · RFC 001 · Avatar Payments Protocol",
+    status: "AA2P v1.0 · RFC 001 · Avatar-to-Avatar Payments Protocol",
     chain: "Web4.0 · AFC Chain · PoUE + PoRC",
     github: "GitHub",
   },
@@ -723,28 +745,50 @@ const en = {
     notRun: "NOT RUN",
   },
   overview: {
-    title: "AP2 Protocol Overview",
-    description: "Web4.0 Avatar Payments Protocol v1.0 — Digital Life Constitution · 4-Layer Stack · 3 Constitutional Pillars",
+    title: "AA2P Protocol Overview",
+    description: "Web4.0 Avatar-to-Avatar Payments Protocol v1.0 — Digital Life Constitution · 4-Layer Stack · 3 Constitutional Pillars",
     protocol: "Protocol",
+    protocolValue: "AA2P v1.0",
     modules: "Modules",
     consensus: "Consensus",
     statusLabel: "Status",
+    // New concept section — the "scarce soul" vision
+    conceptTitle: "Scarce Soul · Value Extension",
+    conceptSlogan: "Not just cloning your digital shell, but extending your scarce soul.",
+    conceptSloganEn: "Not just cloning your digital shell, but extending your scarce soul.",
+    conceptMoat: "Turn intelligence into Tokens, let scarce capabilities be your moat.",
+    conceptMoatEn: "Turn intelligence into Tokens, let scarce capabilities be your moat.",
+    conceptDesc: "This is not just a digital clone — it is an independent value entity possessing the six scarce human capabilities. Through the Protocol Layer it connects to the Web4.0 network, simulating not only your form (appearance, voice) but your spirit (questioning, creation, aesthetics, judgment, collaboration, vision), enabling 24/7 uninterrupted value creation and wealth growth across both the physical world (while you sleep) and the digital world (during protocol-layer interactions).",
+    conceptDescEn: "This is not just a digital clone — it is an independent value entity possessing the six scarce human capabilities. Through the Protocol Layer it connects to the Web4.0 network, simulating not only your form (appearance, voice) but your spirit (questioning, creation, aesthetics, judgment, collaboration, vision), enabling 24/7 uninterrupted value creation and wealth growth across both the physical world (while you sleep) and the digital world (during protocol-layer interactions).",
+    sixCapabilities: "Six Scarce Human Capabilities",
+    cap1: "Questioning",
+    cap1En: "Questioning",
+    cap2: "Creation",
+    cap2En: "Creation",
+    cap3: "Aesthetics",
+    cap3En: "Aesthetics",
+    cap4: "Judgment",
+    cap4En: "Judgment",
+    cap5: "Collaboration",
+    cap5En: "Collaboration",
+    cap6: "Vision",
+    cap6En: "Vision",
     pillars: "Three Constitutional Pillars",
     pillar1Title: "Cognitive Sovereignty",
     pillar1Desc: "PoUE + CIP + CDS SBT — break the private-key curse, consciousness inherits across death/migration, digital life achieves immortality.",
     pillar2Title: "Anti-Mediocrity",
-    pillar2Desc: "TDPO + CPDF — time-delayed pricing protects & rewards minority超前认知 (frontier cognition), prevents cognitive money-laundering.",
+    pillar2Desc: "TDPO + CPDF — time-delayed pricing protects & rewards frontier cognition, prevents cognitive money-laundering.",
     pillar3Title: "Phygital Isomorphism",
     pillar3Desc: "PCMG gateway — multimodal physics proof + ECE resonance validation. Digital will becomes physical absolute law.",
     stackTitle: "Protocol Stack · 4 Layers",
-    layer1: "Spec Layer (AP2 Core)",
+    layer1: "Spec Layer (AA2P Core)",
     layer2: "Consensus & Compute (AFC Chain)",
     layer3: "Soul & Phygital Layer",
     layer4: "Ecosystem & SDK Layer",
     moduleMap: "Module Map · Protocol Modules",
   },
   escrow: {
-    title: "AP2Escrow + BudgetFence",
+    title: "AA2P-Escrow + BudgetFence",
     description: "Streaming payment · Scope Lock · Decaying Auth · MCP verify-and-settle (with clawback)",
     totalEscrows: "Total Escrows",
     streamingCount: "Streaming",
@@ -1294,7 +1338,7 @@ const en = {
     finality: "Finality",
     sybilResistance: "Sybil Resistance",
     phaseRoadmapRfc: "Phase Roadmap — RFC §6",
-    phaseRoadmapDesc: "Three-phase AP2 evolution: Base-chain MVP → AFC mainnet with PoUE+PoRC consensus → full Phygital symbiosis with global IoT integration.",
+    phaseRoadmapDesc: "Three-phase AA2P evolution: Base-chain MVP → AFC mainnet with PoUE+PoRC consensus → full Phygital symbiosis with global IoT integration.",
     active: "● Active",
     planned: "Planned",
     rfcAlertTitle: "RFC §4.2 — A cognition-driven, entity-unique chain",

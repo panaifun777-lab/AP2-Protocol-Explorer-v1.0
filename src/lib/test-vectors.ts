@@ -1,5 +1,5 @@
 // ============================================================
-// AP2 Protocol v1.0 — RFC Test Vectors (§三 + §5.2 §四)
+// AA2P Protocol v1.0 — RFC Test Vectors (§三 + §5.2 §四)
 // Pure structured data describing each RFC test vector and how
 // to assert its expected outcome against the live TypeScript
 // contract mirrors in `src/lib/contracts/*`.
